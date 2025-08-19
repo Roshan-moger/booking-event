@@ -1,14 +1,12 @@
-import Home from "./components/Home"
-
-
+import Home from "./pages/Home";
 
 function App() {
-
   return (
-<>
-<Home />  
-</>
-  )
+    <>
+     
+        <Home />
+    </>
+  );
 }
 
-export default App
+export default App;
