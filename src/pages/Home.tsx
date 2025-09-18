@@ -1,10 +1,15 @@
 
-import type React from "react"
+import  React from "react"
 import { useRef, useState } from "react"
 import { FaFacebook, FaInstagram, FaLinkedin, FaTwitter } from "react-icons/fa"
 import { Lightbulb, Users, ShieldCheck, Sparkles, Rocket } from "lucide-react"
-import axios from "../api/axiosInstance"
-import toast from "react-hot-toast"
+import axiosInstanse from "../api/axiosInstance"
+import { useNavigate } from "react-router-dom"
+import { useDispatch } from "react-redux";
+import { jwtDecode } from "jwt-decode"
+import Toast from "../components/UI/toast"
+import { update_auth_data } from "../redux/action"
+
 
 // Define component props interfaces
 interface CardProps {
@@ -21,7 +26,17 @@ interface CardContentProps {
   className?: string
   children: React.ReactNode
 }
-
+interface DecodedToken {
+  sub: string;        // user email
+  roles: string[];    // user roles
+  iat: number;
+  exp: number;
+}
+interface ToastProps  {
+isOpen: boolean;
+message: string;
+type?: "success" | "error"| "info";
+}
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   className?: string
 }
@@ -63,33 +78,259 @@ const Button: React.FC<ButtonProps> = ({ children, className, ...props }) => (
 )
 
 type FormView = "register" | "login"
-
 const Home = () => {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
   const aboutRef = useRef<any>(null)
   const contactRef = useRef<any>(null)
   const missionRef = useRef<any>(null)
   const [formView, setFormView] = useState<FormView>("register")
-  const [email, setEmail] = useState("")
+  const [email, setEmail] = useState<any>("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [phone, setPhone] = useState("")
   const [name, setName] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+const [toast, setToast]= useState <ToastProps>({
+  isOpen: false,
+  type: "success",
+  message: ""
 
-  const handleRegisterClick = async () => {
-    if (password !== confirmPassword) {
-      toast.error("Passwords do not match")
-      return
+})
+
+  // Form validation function
+  const validateLoginForm = (): boolean => {
+    if (!email.trim()) {
+      setToast({
+        isOpen: true,
+        type: "error",
+        message : "Email is required"
+      })
+      return false
     }
+    
+    if (!password) {
+         setToast({
+        isOpen: true,
+        type: "error",
+        message : "Password is required"
+      })
+      return false
+    }
+    
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email.trim())) {
+           setToast({
+        isOpen: true,
+        type: "error",
+        message : "Please enter a valid email address"
+      })
+      return false
+    }
+    
+    return true
+  }
+ 
+
+const handleLogin = async () => {
+  if (!validateLoginForm()) return;
+
+  setIsLoading(true);
+
+  try {
+    // ✅ API call for login
+    const res = await axiosInstanse.post("/auth/login", {
+      email: email.trim(),
+      password,
+    });
+
+    // ✅ Extract token from response
+    const token = res.data?.token;
+
+    if (!token) {
+      throw new Error("Token not found in server response");
+    }
+// ✅ Normalize token
+const finalToken: string = token.startsWith("Bearer ") ? token : `Bearer ${token}`;
+
+// ✅ Set axios auth header
+axiosInstanse.defaults.headers.common["Authorization"] = finalToken;
+
+localStorage.setItem("accessToken", finalToken);
+
+const decodedUser = jwtDecode<DecodedToken>(finalToken.replace("Bearer ", ""));
+  const payload = {
+    token: finalToken,
+    roles: decodedUser.roles || [],
+    email: decodedUser.sub,
+    expiryTime: decodedUser.exp ? new Date(decodedUser.exp * 1000).toISOString() : "",
+  };
+
+// ✅ Dispatch to Redux
+dispatch(update_auth_data(payload));
+
+
+    // ✅ Save decoded user in localStorage (optional)
+    localStorage.setItem("userData", JSON.stringify(decodedUser));
+
+    // ✅ Show success toast
+    setToast({
+      isOpen: true,
+      type: "success",
+      message: "Login successful!",
+    });
+
+    // ✅ Redirect user
+    navigate("/dashboard");
+  } catch (err: any) {
+    console.error("Login error:", err);
+
+    let errorMessage = "Login failed";
+
+    if (err.response) {
+      const status = err.response.status;
+      const message =
+        err.response.data?.message || err.response.data?.error;
+
+      switch (status) {
+        case 400:
+          errorMessage = message || "Invalid email or password";
+          break;
+        case 401:
+          errorMessage = "Invalid credentials";
+          break;
+        case 403:
+          errorMessage = "Account is blocked or suspended";
+          break;
+        case 404:
+          errorMessage = "User not found";
+          break;
+        case 429:
+          errorMessage = "Too many login attempts. Please try again later";
+          break;
+        case 500:
+          errorMessage = "Server error. Please try again later";
+          break;
+        default:
+          errorMessage = message || "Login failed";
+      }
+    } else if (err.request) {
+      errorMessage = "Network error. Please check your connection";
+    } else {
+      errorMessage = err.message || "Something went wrong";
+    }
+
+    setToast({
+      isOpen: true,
+      type: "error",
+      message: errorMessage,
+    });
+  } finally {
+    setIsLoading(false);
+  }
+};
+  // Validation for registration
+  const validateRegisterForm = (): boolean => {
+    if (!name.trim()) {
+                     setToast({
+        isOpen: true,
+        type: "error",
+        message : "Full name is required"
+      })
+      return false
+    }
+    
+    if (!email.trim()) {
+      setToast({
+        isOpen: true,
+        type: "error",
+        message : "Email is required"
+      })
+      return false
+    }
+    
+    if (!phone.trim()) {
+         setToast({
+        isOpen: true,
+        type: "error",
+        message : "Phone number is required"
+      })
+      return false
+    }
+    
+    if (!password) {
+        setToast({
+        isOpen: true,
+        type: "error",
+        message : "Password is required"
+      })
+      return false
+    }
+    
+    if (password.length < 6) {
+            setToast({
+        isOpen: true,
+        type: "error",
+        message : "Password must be at least 6 characters long"
+      }) 
+      return false
+    }
+    
+    if (password !== confirmPassword) {
+      setToast({
+        isOpen: true,
+        type: "error",
+        message : "Passwords do not match"
+      }) 
+      return false
+    }
+    
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email.trim())) {
+            setToast({
+        isOpen: true,
+        type: "error",
+        message : "Please enter a valid email address"
+      }) 
+      return false
+    }
+    
+    // Basic phone validation
+    const phoneRegex = /^[+]?[\d\s\-()]+$/
+    if (!phoneRegex.test(phone.trim())) {
+                  setToast({
+        isOpen: true,
+        type: "error",
+        message : "Please enter a valid phone number"
+      }) 
+      return false
+    }
+    
+    return true
+  }
+
+  // Updated register handler
+  const handleRegisterClick = async () => {
+    // Validate form before submitting
+    if (!validateRegisterForm()) return
+    
     setIsLoading(true)
     try {
-      await axios.post("/auth/register", {
-        email,
-        phoneNumber: phone,
-        name,
-        password,
+      await axiosInstanse.post("/auth/register", {
+        email: email.trim(),
+        phoneNumber: phone.trim(),
+        name: name.trim(),
+        password, 
       })
-      toast.success("Registration successful!")
+      setToast({
+        isOpen: true,
+        type: "success",
+        message : "Registration successful! Please sign in."
+      }) 
+      // Switch to login form and clear fields
       setFormView("login")
       setEmail("")
       setPassword("")
@@ -97,27 +338,22 @@ const Home = () => {
       setPhone("")
       setName("")
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Registration failed")
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const handleLogin = async () => {
-    setIsLoading(true)
-    try {
-      const res = await axios.post("/auth/login", { email, password })
-      const bearer = (res as any).headers?.authorization
-      if (bearer) {
-        axios.defaults.headers.common["Authorization"] = bearer
+      console.error('Registration error:', err)
+      
+      let errorMessage = "Registration failed"
+      
+      if (err.response?.data?.message) {
+        errorMessage = err.response.data.message
+      } else if (err.response?.status === 409) {
+        errorMessage = "Email already exists. Please use a different email."
+      } else if (err.response?.status === 400) {
+        errorMessage = "Invalid registration data. Please check your inputs."
       }
-      toast.success("Login successful!")
-      // Simple redirect to dashboard
-      setTimeout(() => {
-        window.location.href = "/dashboard"
-      }, 1500)
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || "Login failed")
+          setToast({
+        isOpen: true,
+        type: "error",
+        message : errorMessage
+      })
     } finally {
       setIsLoading(false)
     }
@@ -126,7 +362,6 @@ const Home = () => {
   const scrollToSection = (ref: React.RefObject<HTMLElement>) => {
     ref.current?.scrollIntoView({ behavior: "smooth" })
   }
-
   return (
     <div className="flex flex-col min-h-screen">
       {/* Header */}
@@ -394,7 +629,7 @@ const Home = () => {
 
         <section className="w-full py-12 md:py-24 lg:py-32 bg-gray-800 text-white relative overflow-hidden">
           <img
-            src="/placeholder.svg?height=800&width=1200"
+            src="./public/image.png"
             alt="Office workspace background"
             className="absolute inset-0 opacity-30 object-cover w-full h-full"
             width={1200}
@@ -482,6 +717,13 @@ const Home = () => {
         </div>
         <div className="text-center text-sm mt-8">© {new Date().getFullYear()} Spot My Event. All rights reserved.</div>
       </footer>
+
+    <Toast isOpen={toast.isOpen} type={toast.type} message={toast.message}   onClose={() => setToast({
+      ...toast,
+      isOpen: false
+    })}
+/>
+
     </div>
   )
 }
