@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { MapPin, Calendar, Clock, Star, Zap, X, Download, Share2 } from "lucide-react"
+import { MapPin, Calendar, Clock, Star, Zap, X, Download, Share2, ArrowLeft } from "lucide-react"
 import { Button } from "../../components/UI/button"
 
 
@@ -72,15 +72,32 @@ const MyTickets = () => {
 
   return (
     <div className="bg-gray-50 overflow-y-auto">
-      <div className="p-6">
+      <div className="">
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-800">My Tickets</h1>
-          <p className="text-base sm:text-lg text-slate-600">Your movie experiences await</p>
+      <div className="bg-white border-b border-slate-200">
+        <div className="px-6 py-6">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => window.history.back()}
+              className="flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back
+            </button>
+            <div className="h-6 w-px bg-slate-300" />
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900">My Tickets</h1>
+              <p className="text-sm text-slate-600 mt-1">
+                Your movie experiences await
+              </p>
+            </div>
+          </div>
         </div>
+      </div>
+
 
         {/* Tabs */}
-        <div className="flex gap-4 mb-6">
+        <div className="flex gap-4 m-6">
           <Button
             variant={activeTab === "active" ? "default" : "ghost"}
             onClick={() => setActiveTab("active")}
@@ -96,7 +113,7 @@ const MyTickets = () => {
         </div>
 
         {/* Tickets */}
-        <div className="space-y-4">
+        <div className="space-y-4 m-6">
           {displayTickets.map((ticket) => (
             <div
               key={ticket.id}

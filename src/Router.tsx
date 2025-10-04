@@ -4,10 +4,11 @@ import React, { Suspense, lazy } from "react"
 import { Routes, Route } from "react-router-dom"
 import Layout from "./components/DashboardHelpers/Layout"
 import { LoadingSpinner, SkeletonLoader } from "./components/LoadingSpinner"
-// ✅ Lazy load pages
-const Home = lazy(() => import("./pages/Home")) // Login Page
+import ProtectedRoute from "./helpers"
+
+// Lazy load pages
+const Home = lazy(() => import("./pages/Home"))
 const HomePage = lazy(() => import("./pages/User/HomePage"))
-const DetailPage = lazy(() => import("./pages/User/DetailPage"))
 const CreateEvent = lazy(() => import("./pages/createEvent"))
 const VenueSelectionPage = lazy(() => import("./pages/venue-selection"))
 const VenueCreatorPage = lazy(() => import("./pages/createEvent/venue-creator"))
@@ -16,6 +17,12 @@ const MyEvents = lazy(() => import("./pages/my-events"))
 const EventCards = lazy(() => import("./pages/event-card"))
 const PaymentPage = lazy(() => import("./pages/payment"))
 const Commen = lazy(() => import("./components/DashboardHelpers/Commen"))
+const NotFound = lazy(() => import("./components/DashboardHelpers/NotFound"))
+const EventManagementTable = lazy(() => import("./pages/Admin/events"))
+const VenueManagementTable = lazy(() => import("./pages/Admin/venues"))
+const UserManagementTable = lazy(() => import("./pages/Admin/organizers"))
+const ContactUsPage = lazy(() => import("./pages/contactUs"))
+const SupportPage = lazy(() => import("./pages/support"))
 
 class LazyLoadErrorBoundary extends React.Component<
   { children: React.ReactNode; fallback?: React.ReactNode },
@@ -40,7 +47,9 @@ class LazyLoadErrorBoundary extends React.Component<
         this.props.fallback || (
           <div className="flex items-center justify-center min-h-screen bg-gray-100">
             <div className="text-center">
-              <h2 className="text-xl font-semibold text-gray-800 mb-2">Oops! Something went wrong.</h2>
+              <h2 className="text-xl font-semibold text-gray-800 mb-2">
+                Oops! Something went wrong.
+              </h2>
               <p className="text-gray-600 mb-4">Failed to load the page.</p>
               <button
                 onClick={() => window.location.reload()}
@@ -63,184 +72,195 @@ const Router: React.FC = () => {
     <LazyLoadErrorBoundary>
       <Suspense fallback={<LoadingSpinner />}>
         <Routes>
-          {/* ✅ Public Routes (Without Layout) */}
+          {/* Public Routes */}
           <Route path="/" element={<Home />} />
           <Route path="/common" element={<Commen />} />
+          <Route path="/404" element={<NotFound />} />
+          <Route path="/*" element={<NotFound />} />
 
-          {/* ✅ Dashboard Routes (With Layout) */}
+          {/* Customer / Organizer Routes */}
           <Route
             path="/dashboard"
             element={
-              <Layout>
-                <Suspense fallback={<SkeletonLoader />}>
-                  <HomePage />
-                </Suspense>
-              </Layout>
+              <ProtectedRoute allowedRoles={["CUSTOMER", "ORGANIZER"]}>
+                <Layout>
+                  <Suspense fallback={<SkeletonLoader />}>
+                    <HomePage />
+                  </Suspense>
+                </Layout>
+              </ProtectedRoute>
             }
           />
-
-          {/* ✅ Venue Selection - Inside Layout */}
           <Route
-            path="/venue"
+            path="/venues"
             element={
-              <Layout>
-                <Suspense fallback={<SkeletonLoader />}>
-                  <VenueSelectionPage />
-                </Suspense>
-              </Layout>
+              <ProtectedRoute allowedRoles={["CUSTOMER", "ORGANIZER"]}>
+                <Layout>
+                  <Suspense fallback={<SkeletonLoader />}>
+                    <VenueSelectionPage />
+                  </Suspense>
+                </Layout>
+              </ProtectedRoute>
             }
           />
-
-          {/* ✅ Create Venue - Inside Layout */}
           <Route
-            path="/venue/create"
+            path="/venues/:action"
             element={
-              <Layout>
-                <Suspense fallback={<SkeletonLoader />}>
-                  <VenueCreatorPage />
-                </Suspense>
-              </Layout>
+              <ProtectedRoute allowedRoles={["CUSTOMER", "ORGANIZER"]}>
+                <Layout>
+                  <Suspense fallback={<SkeletonLoader />}>
+                    <VenueCreatorPage />
+                  </Suspense>
+                </Layout>
+              </ProtectedRoute>
             }
           />
-     <Route
-            path="/venue/edit/:venueId"
+          <Route
+            path="/venues/:action/:venueId"
             element={
-              <Layout>
-                <Suspense fallback={<SkeletonLoader />}>
-                  <VenueCreatorPage />
-                </Suspense>
-              </Layout>
+              <ProtectedRoute allowedRoles={["CUSTOMER", "ORGANIZER"]}>
+                <Layout>
+                  <Suspense fallback={<SkeletonLoader />}>
+                    <VenueCreatorPage />
+                  </Suspense>
+                </Layout>
+              </ProtectedRoute>
             }
           />
-
-          {/* ✅ Create Event - Inside Layout */}
           <Route
             path="/tickets"
             element={
-              <Layout>
-                <Suspense fallback={<SkeletonLoader />}>
-                  <MyTickets />
-                </Suspense>
-              </Layout>
-            }
-          />
-
-          {/* ✅ Create Event with Venue ID - Inside Layout */}
-          <Route
-            path="event/add/:id"
-            element={
-              <Layout>
-                <Suspense fallback={<SkeletonLoader />}>
-                  <CreateEvent />
-                </Suspense>
-              </Layout>
-            }
-          />
-
-             <Route
-            path="event/edit/:id"
-            element={
-              <Layout>
-                <Suspense fallback={<SkeletonLoader />}>
-                  <CreateEvent />
-                </Suspense>
-              </Layout>
-            }
-          />
-       <Route
-            path="event/edit/:venueId"
-            element={
-              <Layout>
-                <Suspense fallback={<SkeletonLoader />}>
-                  <CreateEvent />
-                </Suspense>
-              </Layout>
+              <ProtectedRoute allowedRoles={["CUSTOMER", "ORGANIZER"]}>
+                <Layout>
+                  <Suspense fallback={<SkeletonLoader />}>
+                    <MyTickets />
+                  </Suspense>
+                </Layout>
+              </ProtectedRoute>
             }
           />
           <Route
             path="/my-events"
             element={
-              <Layout>
-                <Suspense fallback={<SkeletonLoader />}>
-                  <MyEvents/>
-                </Suspense>
-              </Layout>
-            }
-          />
-
-       <Route
-            path="/payment/evnet/:eventId"
-            element={
-              <Layout>
-                <Suspense fallback={<SkeletonLoader />}>
-                  <PaymentPage/>
-                </Suspense>
-              </Layout>
-            }
-          />
-         <Route
-            path="event/show/:id"
-            element={
-              <Layout>
-                <Suspense fallback={<SkeletonLoader />}>
-                  <EventCards />
-                </Suspense>
-              </Layout>
+              <ProtectedRoute allowedRoles={["CUSTOMER", "ORGANIZER"]}>
+                <Layout>
+                  <Suspense fallback={<SkeletonLoader />}>
+                    <MyEvents />
+                  </Suspense>
+                </Layout>
+              </ProtectedRoute>
             }
           />
           <Route
-            path="/detail/:id"
+            path="/venues/event/:action/:venueId"
             element={
-              <Layout>
-                <Suspense fallback={<LoadingSpinner />}>
-                  <DetailPage />
-                </Suspense>
-              </Layout>
+              <ProtectedRoute allowedRoles={["CUSTOMER", "ORGANIZER"]}>
+                <Layout>
+                  <Suspense fallback={<SkeletonLoader />}>
+                    <CreateEvent />
+                  </Suspense>
+                </Layout>
+              </ProtectedRoute>
             }
           />
-
-          {/* ✅ Static Pages Inside Dashboard */}
           <Route
-            path="/world-cup"
+            path="/payment/event/:eventId"
             element={
-              <Layout>
-                <Suspense fallback={<LoadingSpinner />}>
-                  <div className="p-6 text-white">World Cup Content</div>
-                </Suspense>
-              </Layout>
+              <ProtectedRoute allowedRoles={["CUSTOMER", "ORGANIZER"]}>
+                <Layout>
+                  <Suspense fallback={<SkeletonLoader />}>
+                    <PaymentPage />
+                  </Suspense>
+                </Layout>
+              </ProtectedRoute>
             }
           />
-
           <Route
-            path="/bollywood"
+            path="/my-events/event/show/:id"
             element={
-              <Layout>
-                <Suspense fallback={<LoadingSpinner />}>
-                  <div className="p-6 text-white">Bollywood Content</div>
-                </Suspense>
-              </Layout>
+              <ProtectedRoute allowedRoles={["CUSTOMER", "ORGANIZER"]}>
+                <Layout>
+                  <Suspense fallback={<SkeletonLoader />}>
+                    <EventCards />
+                  </Suspense>
+                </Layout>
+              </ProtectedRoute>
             }
           />
 
+          {/* Admin Routes */}
+          <Route
+            path="/manage/events"
+            element={
+              <ProtectedRoute allowedRoles={["ADMIN"]}>
+                <Layout>
+                  <Suspense fallback={<SkeletonLoader />}>
+                    <EventManagementTable />
+                  </Suspense>
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/manage/venues"
+            element={
+              <ProtectedRoute allowedRoles={["ADMIN"]}>
+                <Layout>
+                  <Suspense fallback={<SkeletonLoader />}>
+                    <VenueManagementTable />
+                  </Suspense>
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/manage/organisers"
+            element={
+              <ProtectedRoute allowedRoles={["ADMIN"]}>
+                <Layout>
+                  <Suspense fallback={<SkeletonLoader />}>
+                    <UserManagementTable />
+                  </Suspense>
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Common for all logged-in users */}
+          <Route
+            path="/contact"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <ContactUsPage />
+                  </Suspense>
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/support"
             element={
-              <Layout>
-                <Suspense fallback={<LoadingSpinner />}>
-                  <div className="p-6 text-white">Support Page</div>
-                </Suspense>
-              </Layout>
+              <ProtectedRoute>
+                <Layout>
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <SupportPage />
+                  </Suspense>
+                </Layout>
+              </ProtectedRoute>
             }
           />
-
           <Route
             path="/settings"
             element={
-              <Layout>
-                <Suspense fallback={<LoadingSpinner />}>
-                  <div className="p-6 text-white">Settings Page</div>
-                </Suspense>
-              </Layout>
+              <ProtectedRoute>
+                <Layout>
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <div className="p-6 text-white">Settings Page</div>
+                  </Suspense>
+                </Layout>
+              </ProtectedRoute>
             }
           />
         </Routes>

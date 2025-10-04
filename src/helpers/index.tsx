@@ -1,6 +1,7 @@
 import { useEffect } from "react"
 import { useMap } from "react-leaflet"
 import L from "leaflet"
+import { Navigate } from "react-router-dom"
 
 
 export interface Seat {
@@ -11,30 +12,32 @@ export interface Seat {
   price: number
   status: "AVAILABLE" | "BOOKED" | "SELECTED"
 }
+export type SeatStatus = "AVAILABLE" | "BOOKED" | string
+
 
 export interface Event {
   id: number
   title: string
   description: string
   categoryName: string
-  venueName: string
-  venueId: number
+  ratings: number
+  status: "ACTIVE" | "INACTIVE" | string
+  imageUrls?: string[]
   startDate: string
   endDate: string
-  ratings: number
-  status: "active" | "upcoming" | "completed" | "cancelled" | "approved"
-  capacity: number
-  ticketPrice: number
-  seatingType: "SEAT_LAYOUT" | "GENERAL_ADMISSION"
-  totalSeats: number
+  venueName: string
+  venueId?: number | string
   rows: number
   columns: number
-  seats: Seat[]
-  mode: "WITH_TICKETING" | "WITHOUT_TICKETING"
+  seatingType: string
+  capacity: number
+  totalSeats: number
+  seats?: Seat[]
+  ticketPrice: number
   organizerFeeAmount: number
-  organizerFeeStatus: "PAID" | "DUE"
-  imageUrls: string[]
-  hasActiveAd: boolean
+  organizerFeeStatus: "PAID" | "UNPAID" | string
+  mode: string
+  hasActiveAd?: boolean
 }
 
 export interface BookingData {
@@ -143,3 +146,32 @@ export function base64ToFile(base64: string): File {
   // Return a File (you can give a default name)
   return new File([byteArray], `image.${mimeType.split('/')[1]}`, { type: mimeType });
 }
+
+
+interface UserData {
+  sub: string;
+  iat: number;
+  exp: number;
+  roles: string[];
+}
+const ProtectedRoute: React.FC<any> = ({ children, allowedRoles }) => {
+  const token = localStorage.getItem("accessToken")
+    const userDataString  = localStorage.getItem("userData")
+const userData: UserData | null = userDataString ? JSON.parse(userDataString) : null;
+  const userRole = userData?.roles[0]
+
+console.log(); 
+   // or get from Redux
+
+  if (!token) {
+    return <Navigate to="/" replace /> // Not logged in
+  }
+
+  if (allowedRoles && !allowedRoles.includes(userRole || "")) {
+    return <Navigate to="/404" replace /> // Role not allowed
+  }
+
+  return <>{children}</>
+}
+
+export default ProtectedRoute

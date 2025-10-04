@@ -6,6 +6,9 @@ import { useNavigate } from "react-router-dom"
 import Sidebar from "./Sidebar"
 import Header from "./Header"
 import type { InitialReduxStateProps } from "../../redux/redux.props"
+import { update_auth_data } from "../../redux/action"
+import { jwtDecode } from "jwt-decode"
+import { store } from "../../redux/store"
 
 interface LayoutProps {
   children: React.ReactNode
@@ -15,58 +18,80 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
   
-  // Get token and expiry from Redux state
-  const token = useSelector((state: InitialReduxStateProps) => state.tokenInfo.accessToken)
-  const tokenExpiry = useSelector((state: InitialReduxStateProps) => state.tokenInfo.expiryTime)
+  // Redux state
+  const token = useSelector(
+    (state: InitialReduxStateProps) => state.tokenInfo.accessToken
+  )
+  const tokenExpiry = useSelector(
+    (state: InitialReduxStateProps) => state.tokenInfo.expiryTime
+  )
 
+  // Load token from localStorage OR redirect if missing
+  useEffect(() => {
+    const storedToken = localStorage.getItem("accessToken")
+
+    if (!storedToken) {
+      // ❌ No token -> redirect to "/"
+      navigate("/")
+      return
+    }
+
+    // Ensure "Bearer " prefix
+    const finalToken = storedToken.startsWith("Bearer")
+      ? storedToken
+      : `Bearer ${storedToken}`
+
+    try {
+      const decodedUser: any = jwtDecode(finalToken.replace("Bearer ", ""))
+
+      const payload = {
+        token: finalToken,
+        roles: decodedUser.roles || [],
+        email: decodedUser.sub,
+        expiryTime: decodedUser.exp
+          ? new Date(decodedUser.exp * 1000).toISOString()
+          : "",
+      }
+      store.dispatch(update_auth_data(payload))
+    } catch (err) {
+      console.error("Failed to decode token:", err)
+      // Bad token -> redirect to "/"
+      localStorage.removeItem("accessToken")
+      navigate("/")
+    }
+  }, [dispatch, navigate])
+
+  // Check token expiry continuously
   useEffect(() => {
     const checkTokenExpiration = () => {
       if (token && tokenExpiry) {
         const currentTime = Date.now()
-
-        // Convert ISO date string to ms timestamp
         const expiryTime = new Date(tokenExpiry).getTime()
-
         const isExpired = currentTime > expiryTime
 
         if (isExpired) {
-          // Clear token from state and redirect to session expired page
-          dispatch({ type: "CLEAR_AUTH" }) // Adjust action type according to your Redux setup
-          navigate("/common")
+          dispatch({ type: "CLEAR_AUTH" })
+          localStorage.removeItem("accessToken")
+          localStorage.removeItem("expiryTime")
+          navigate("/")
         }
-      } else if (!token) {
-        // If no token, redirect to session expired
-        navigate("/common")
       }
     }
 
-    // Check immediately
-    checkTokenExpiration()
-    
-    // Set up interval to check every minute
+    checkTokenExpiration() // run immediately
     const interval = setInterval(checkTokenExpiration, 60000)
-    
-    // Cleanup interval on unmount
     return () => clearInterval(interval)
   }, [token, tokenExpiry, dispatch, navigate])
 
   return (
     <div className="flex h-screen bg-gray-100">
-      {/* Sidebar - hidden on mobile, fixed on desktop */}
+      {/* Sidebar */}
       <Sidebar />
-      
-      {/* Main content wrapper (Header + Content + Footer) */}
+
+      {/* Main Content */}
       <div className="flex flex-col flex-1 md:ml-64">
-        {/* Header at top */}
         <Header />
-        
-        {/* Scrollable content */}
-        <main className="flex-1 overflow-y-auto">
-          {children}
-        </main>
-        
-        {/* Footer fixed at bottom */}
-        {/* <Footer /> */}
+        <main className="flex-1 overflow-y-auto">{children}</main>
       </div>
     </div>
   )

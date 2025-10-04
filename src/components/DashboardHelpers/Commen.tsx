@@ -1,30 +1,30 @@
-"use client"
-import React from "react"
-import { useSelector, useDispatch } from "react-redux"
-import { useNavigate } from "react-router-dom"
-import type { InitialReduxStateProps } from "../../redux/redux.props"
-
-
+"use client";
+import React from "react";
+import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import type {} from "../../redux/redux.props";
 
 const Commen: React.FC = () => {
-  const dispatch = useDispatch()
-  const navigate = useNavigate()
-  
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
   // Get token from Redux state using useSelector
-  const token = useSelector((state: InitialReduxStateProps) => state.tokenInfo.accessToken)
-  
+
   const handleLoginRedirect = () => {
     // Clear any remaining auth state
-    dispatch({ type: "CLEAR_AUTH" }) // Adjust action type according to your Redux setup
-    
-   
-    navigate("/")
-  }
-  
+    dispatch({ type: "CLEAR_AUTH" }); // Adjust action type according to your Redux setup
+  // ✅ Clear all relevant localStorage keys
+  localStorage.removeItem("accessToken");
+  localStorage.removeItem("authToken");
+  localStorage.removeItem("userData");
+  localStorage.removeItem("token");
+    navigate("/");
+  };
+
   const handleRefresh = () => {
     // Attempt to refresh/reload the page
-    window.location.reload()
-  }
+    window.location.reload();
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
@@ -46,17 +46,18 @@ const Commen: React.FC = () => {
               />
             </svg>
           </div>
-          
+
           {/* Title */}
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
             Session Expired
           </h1>
-          
+
           {/* Description */}
           <p className="text-gray-600 mb-6">
-            Your session has expired for security reasons. Please log in again to continue using the application.
+            Your session has expired for security reasons. Please log in again
+            to continue using the application.
           </p>
-          
+
           {/* Action buttons */}
           <div className="space-y-3">
             <button
@@ -65,7 +66,7 @@ const Commen: React.FC = () => {
             >
               Go to Login
             </button>
-            
+
             <button
               onClick={handleRefresh}
               className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-200"
@@ -76,7 +77,7 @@ const Commen: React.FC = () => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Commen
+export default Commen;

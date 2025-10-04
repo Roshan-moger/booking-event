@@ -14,8 +14,7 @@ import { Input } from "../../components/UI/input"
 import { MapControls } from "../../helpers"
 import Label from "../../components/UI/label"
 import Toast from "../../components/UI/toast"
-import { useSelector } from "react-redux"
-import type { InitialReduxStateProps } from "../../redux/redux.props"
+
 
 interface VenueFormData {
   name: string
@@ -45,8 +44,7 @@ interface LocationSuggestion {
 
 const VenueCreatorPage = () => {
   const navigate = useNavigate()
-    const { id } = useParams()
-  const actions = useSelector((state: InitialReduxStateProps) => state.action)
+    const { action, venueId } = useParams()
   
   const searchInputRef = useRef<HTMLInputElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -77,7 +75,6 @@ const VenueCreatorPage = () => {
 
   // Handle click outside to close suggestions
   useEffect(() => {
-
     const handleClickOutside = (event: MouseEvent) => {
       if (
         dropdownRef.current &&
@@ -98,10 +95,10 @@ const VenueCreatorPage = () => {
 
 
    useEffect(() => {
-    if (actions === "edit" && id) {
+    if (action === "edit" && venueId) {
       const fetchVenue = async () => {
         try {
-          const res = await axiosInstance.get(`/organizer/venues/getbyid/${id}`)
+          const res = await axiosInstance.get(`/organizer/venues/getbyid/${venueId}`)
           if (res.status === 200) {
             setFormData(res.data)
                   console.log(res.data)
@@ -109,17 +106,17 @@ const VenueCreatorPage = () => {
           }
         } catch (error: any) {
           console.error("Error fetching venue:", error)
-          setToast({
-            isOpen: true,
-            type: "error",
-            message: error?.response?.data?.message || "Failed to load venue",
-          })
+          // setToast({
+          //   isOpen: true,
+          //   type: "error",
+          //   message: error?.response?.data?.message || "Failed to load venue",
+          // })
         }
       }
       fetchVenue()
 
     }
-  }, [actions, id])
+  }, [action, venueId])
 
   // ✅ Create / Update venue
   const handleSubmitVenue = async () => {
@@ -135,8 +132,8 @@ const VenueCreatorPage = () => {
     setIsSubmitting(true)
 
     try {
-      if (actions === "edit" && id) {
-        const res = await axiosInstance.put(`/organizer/venues/${id}`, formData)
+      if (action === "edit" && venueId) {
+        const res = await axiosInstance.put(`/organizer/venues/${venueId}`, formData)
         if (res.status === 200) {
           setToast({
             isOpen: true,
@@ -144,19 +141,19 @@ const VenueCreatorPage = () => {
             message: "Venue updated successfully!",
           })
           setTimeout(()=>{
-          navigate("/venue")
+          navigate(-1)
 
           },1000)
         }
       } else {
-        const res = await axiosInstance.post("/organizer/venues", formData)
+        const res = await axiosInstance.post("/organizer/venues/mine", formData)
         if (res.status === 200) {
           setToast({
             isOpen: true,
             type: "success",
             message: "Venue created successfully!",
           })
-          navigate("/venue")
+          navigate("/venues")
           
         }
       }
@@ -376,7 +373,7 @@ const VenueCreatorPage = () => {
 
   // ✅ Navigate to venue page
   const handleGoToVenuePage = () => {
-    navigate("/venue")
+    navigate("/venues")
   }
 
   return (
@@ -385,7 +382,7 @@ const VenueCreatorPage = () => {
         {/* Header with Go to Venue Page Button */}
         <div className="flex items-center justify-between mb-6">
 <h1 className="text-2xl md:text-3xl font-bold text-slate-800">
-  {actions === "edit" ? "Edit Venue" : "Create New Venue"}
+  {action === "edit" ? "Edit Venue" : "Create New Venue"}
 </h1>
           
           {/* Go to Venue Page Button with Tooltip */}
@@ -583,11 +580,11 @@ const VenueCreatorPage = () => {
     className="flex-1 h-12 text-base md:text-lg bg-[#5d33fb] hover:bg-[#4c2bd9] text-white disabled:opacity-50"
   >
     {isSubmitting ? (
-      actions === "edit" ? "Updating..." : "Creating..."
+      action === "edit" ? "Updating..." : "Creating..."
     ) : (
       <>
         <Check className="h-4 w-4 mr-2" />
-        {actions === "edit" ? "Update Venue" : "Create Venue"}
+        {action === "edit" ? "Update Venue" : "Create Venue"}
       </>
     )}
   </Button>

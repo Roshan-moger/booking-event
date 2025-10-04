@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom"
 import { useDispatch } from "react-redux";
 import { jwtDecode } from "jwt-decode"
 import Toast from "../components/UI/toast"
-import { update_auth_data } from "../redux/action"
+import { update_auth_data, update_path } from "../redux/action"
 
 
 // Define component props interfaces
@@ -85,7 +85,7 @@ const Home = () => {
   const aboutRef = useRef<any>(null)
   const contactRef = useRef<any>(null)
   const missionRef = useRef<any>(null)
-  const [formView, setFormView] = useState<FormView>("register")
+  const [formView, setFormView] = useState<FormView>("login")
   const [email, setEmail] = useState<any>("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
@@ -182,8 +182,13 @@ dispatch(update_auth_data(payload));
       message: "Login successful!",
     });
 
-    // ✅ Redirect user
+    if(decodedUser.roles[0]==="ADMIN"){
+          navigate("/manage/venues");
+
+    }else{
+      dispatch(update_path("/dashboard"))
     navigate("/dashboard");
+    }
   } catch (err: any) {
     console.error("Login error:", err);
 
@@ -321,7 +326,7 @@ dispatch(update_auth_data(payload));
     try {
       await axiosInstanse.post("/auth/register", {
         email: email.trim(),
-        phoneNumber: phone.trim(),
+        phone: phone.trim(),
         name: name.trim(),
         password, 
       })

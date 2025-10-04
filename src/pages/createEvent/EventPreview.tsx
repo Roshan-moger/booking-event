@@ -56,7 +56,7 @@ const EventPreview = ({
       <div className="bg-card/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-border/50 overflow-hidden">
         <div className="relative h-56 sm:h-72 bg-gradient-to-br from-accent via-accent/90 to-accent/80">
           {image ? (
-            <img src={`https://spot.app.codevicesolution.in/api${formData.posterImage}`} alt="Event Poster" className="w-full h-full object-cover" />
+            <img src={`https://spot.app.codevicesolution.in/api/${formData.posterImage}`} alt="Event Poster" className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-accent via-accent/90 to-accent/80 flex items-center justify-center">
               <div className="text-accent-foreground text-center px-4">
