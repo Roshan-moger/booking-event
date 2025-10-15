@@ -1,5 +1,5 @@
-"use client"
-import type React from "react"
+
+import  React from "react"
 import { useEffect } from "react"
 import { useSelector, useDispatch } from "react-redux"
 import { useNavigate } from "react-router-dom"

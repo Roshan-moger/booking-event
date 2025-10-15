@@ -1,6 +1,4 @@
-"use client"
-
-import type React from "react"
+import React from "react"
 
 import { useState, useEffect, useRef } from "react"
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet"
@@ -146,7 +144,7 @@ const VenueCreatorPage = () => {
           },1000)
         }
       } else {
-        const res = await axiosInstance.post("/organizer/venues/mine", formData)
+        const res = await axiosInstance.post("/organizer/venues", formData)
         if (res.status === 200) {
           setToast({
             isOpen: true,

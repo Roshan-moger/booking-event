@@ -1,4 +1,3 @@
-"use client"
 
 import { ArrowLeft, ArrowRight, Calendar, Clock, Tag, Users, MapPin, Star } from "lucide-react"
 import { Button } from "../../components/UI/button"

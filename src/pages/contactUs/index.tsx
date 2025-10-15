@@ -7,12 +7,6 @@ import {
   User,
   MessageSquare,
   Building,
-  Clock,
-  CheckCircle,
-  Facebook,
-  Twitter,
-  Instagram,
-  Linkedin,
   Shield,
   FileText,
   HelpCircle,
@@ -32,11 +26,11 @@ const ContactUsPage = () => {
     message: "",
   })
   const [loading, setLoading] = useState(false)
-  const [toast, setToast] = useState({
-    isOpen: false,
-    type: "success" as "success" | "error",
-    message: "",
-  })
+  // const [toast, setToast] = useState({
+  //   isOpen: false,
+  //   type: "success" as "success" | "error",
+  //   message: "",
+  // })
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -48,11 +42,11 @@ const ContactUsPage = () => {
 
   const handleSubmit = async () => {
     if (!formData.name || !formData.email || !formData.subject || !formData.message) {
-      setToast({
-        isOpen: true,
-        type: "error",
-        message: "Please fill in all required fields.",
-      })
+      // setToast({
+      //   isOpen: true,
+      //   type: "error",
+      //   message: "Please fill in all required fields.",
+      // })
       return
     }
 
@@ -61,11 +55,11 @@ const ContactUsPage = () => {
     try {
       await new Promise(resolve => setTimeout(resolve, 1500))
       
-      setToast({
-        isOpen: true,
-        type: "success",
-        message: "Message sent successfully! We'll get back to you within 24 hours.",
-      })
+      // setToast({
+      //   isOpen: true,
+      //   type: "success",
+      //   message: "Message sent successfully! We'll get back to you within 24 hours.",
+      // })
       
       // Reset form
       setFormData({
@@ -76,11 +70,11 @@ const ContactUsPage = () => {
         message: "",
       })
     } catch (error) {
-      setToast({
-        isOpen: true,
-        type: "error",
-        message: "Failed to send message. Please try again.",
-      })
+      // setToast({
+      //   isOpen: true,
+      //   type: "error",
+      //   message: "Failed to send message. Please try again.",
+      // })
     } finally {
       setLoading(false)
     }
@@ -107,12 +101,6 @@ const ContactUsPage = () => {
     }
   ]
 
-  const socialLinks = [
-    { icon: Facebook, name: "Facebook", color: "hover:text-blue-600", bg: "hover:bg-blue-50" },
-    { icon: Twitter, name: "Twitter", color: "hover:text-sky-500", bg: "hover:bg-sky-50" },
-    { icon: Instagram, name: "Instagram", color: "hover:text-pink-600", bg: "hover:bg-pink-50" },
-    { icon: Linkedin, name: "LinkedIn", color: "hover:text-blue-700", bg: "hover:bg-blue-50" }
-  ]
 
   const quickLinks = [
     { icon: Shield, name: "Privacy Policy", href: "#" },

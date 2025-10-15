@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useEffect } from "react"
 import { ArrowLeft, CheckCircle, XCircle, AlertCircle, MapPin, Calendar, Clock, Users, Ticket, Star, CreditCard, Shield, User, Mail, Phone } from "lucide-react"
 import { Button } from "../../components/UI/button"
@@ -93,10 +91,10 @@ export default function PaymentPage() {
     }, 2000)
   }
 
-  const handlePaymentError = (errorMsg: string) => {
-    setError(errorMsg)
-    setPaymentStatus("failed")
-  }
+  // const handlePaymentError = (errorMsg: string) => {
+  //   setError(errorMsg)
+  //   setPaymentStatus("failed")
+  // }
 
   // Seat Layout
   const renderSeatLayout = () => {

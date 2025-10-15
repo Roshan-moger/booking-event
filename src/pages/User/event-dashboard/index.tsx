@@ -1,6 +1,5 @@
-"use client"
 
-import type React from "react"
+import  React from "react"
 
 import { useEffect, useMemo, useState } from "react"
 import { Calendar, Check, Heart, MapPin, Plus, Search, Star } from "lucide-react"

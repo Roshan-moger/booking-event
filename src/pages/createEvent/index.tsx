@@ -1,11 +1,9 @@
-"use client";
 
-import type React from "react";
+import  React from "react";
 import { useEffect, useState } from "react";
-import { Calendar, Clock, ArrowLeft, ArrowRight } from "lucide-react";
+import { Calendar, Clock, ArrowLeft } from "lucide-react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import EventPreview from "./EventPreview";
 import { Button } from "../../components/UI/button";
 import Label from "../../components/UI/label";
 import { Input } from "../../components/UI/input";
@@ -80,10 +78,10 @@ const CreateEvent = () => {
     type: "success",
     message: "",
   });
-  const [currentStep, setCurrentStep] = useState<"create" | "preview">(
-    "create"
-  );
 
+
+  const [showImagePopup, setShowImagePopup] = useState<boolean>(false)
+const[eventId, setEventId]= useState("")
   const showToast = (
     message: string,
     type: "success" | "error" | "info" = "success"
@@ -265,32 +263,33 @@ const handleSubmitEvent = async () => {
     // ✅ Always use multipart/form-data (for both add & edit)
     const form = new FormData();
     if (action === "edit") {
-      form.append("event", JSON.stringify(requestPayload));
+      form.append("event", requestPayload);
     } else {
-      form.append("request", JSON.stringify(requestPayload));
+      form.append("request",requestPayload);
     }
 
-    if (formData.posterImage instanceof File) {
-      form.append("images", formData.posterImage);
-    }
-
+  
     let response;
     if (action === "edit" && venueId) {
-      response = await axiosInstance.put(`/organizer/events/${venueId}`, form, {
-        headers: { "Content-Type": "multipart/form-data" },
+      response = await axiosInstance.put(`/organizer/events/${venueId}`, requestPayload, {
+        // headers: { "Content-Type": "multipart/form-data" },
       });
     } else if (action === "add") {
-      response = await axiosInstance.post(`/organizer/events`, form, {
-        headers: { "Content-Type": "multipart/form-data" },
+      response = await axiosInstance.post(`/organizer/events`, requestPayload, {
+        // headers: { "Content-Type": "multipart/form-data" },
       });
     }
 
     if (response?.status === 200 || response?.status === 201) {
+      console.log(response.data)
+      setEventId(response.data.id)
       showToast(
         action === "edit" ? "Event updated successfully!" : "Event created successfully!",
         "success"
       );
-      navigate(-1);
+
+      setShowImagePopup(true)
+      // navigate(-1);
     }
   } catch (error: any) {
     console.error("❌ Error saving event:", error);
@@ -320,6 +319,57 @@ const handleSubmitEvent = async () => {
   //     />
   //   );
   // }
+const handleSavePoster = async () => {
+  try {
+    if (!formData.posterImage ) {
+      showToast("Please select at least one image to upload.", "error");
+      return;
+    }
+
+    const form = new FormData();
+  if (formData.posterImage instanceof File) {
+      form.append("files", formData.posterImage);
+    }
+
+    // // ✅ Append all selected files to FormData
+    // formData.posterImages.forEach((file: File) => {
+    //   form.append("files", file); // 👈 backend expects "files" as the array field
+    // });
+
+    let response;
+
+    if (action === "edit" && eventId) {
+      response = await axiosInstance.post(`/events/${eventId}/images`, form, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+    } else if (action === "add") {
+        response = await axiosInstance.post(`/events/${eventId}/images`, form, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+    }
+
+    if (response?.status === 200 || response?.status === 201) {
+      showToast(
+        action === "edit"
+          ? "Event images updated successfully!"
+          : "Event images uploaded successfully!",
+        "success"
+      );
+navigate("/my-events")
+      setShowImagePopup(false);
+      // navigate(-1); // optional
+    }
+  } catch (error: any) {
+    console.error("❌ Error uploading images:", error);
+    showToast(
+      error.response?.data?.message ||
+        error.message ||
+        "Failed to upload images",
+      "error"
+    );
+  }
+};
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-2 sm:p-4">
@@ -649,49 +699,7 @@ const handleSubmitEvent = async () => {
               </div>
             )}
 
-          {/* Choose Poster */}
-          <div>
-            <Label className="text-sm font-semibold text-slate-700 mb-3 block">
-              Choose Poster
-            </Label>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
-              <Input
-                placeholder="Select your Poster"
-                value={formData.posterImage ? formData.posterImage.name : ""}
-                readOnly
-                className="flex-1 h-10 sm:h-12 text-base sm:text-lg border-2 border-slate-200 focus:border-[#5d33fb] rounded-xl transition-all duration-200"
-              />
-
-              <div className="relative w-full sm:w-auto">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                />
-                <Button className="bg-[#5d33fb] hover:bg-[#4c2bd9] text-white px-4 py-2 h-10 sm:h-12 w-full sm:w-auto">
-                  Choose file
-                </Button>
-              </div>
-            </div>
-            <div className="text-xs sm:text-sm text-slate-500 mt-2 space-y-1">
-              <div>
-                1. Correct Dimensions: Ensure the poster matches the required
-                sizes ( 1140x300, 180x250).
-              </div>
-              <div>
-                2. File Format: Use high-quality image formats like PNG or JPEG.
-              </div>
-              <div>
-                3. File Size: Keep the file size optimized without compromising
-                quality for faster upload.
-              </div>
-              <div>
-                4. Resolution: Ensure a minimum of 300 DPI for clarity when
-                displayed.
-              </div>
-            </div>
-          </div>
+     
 
           {/* Action Buttons */}
           <div className="pt-4 sm:pt-6 flex sm:flex-row gap-3 sm:gap-4">
@@ -712,6 +720,93 @@ const handleSubmitEvent = async () => {
           </div>
         </div>
       </div>
+
+{showImagePopup && ( 
+
+  <div className="fixed inset-0  backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg transform transition-all duration-300 animate-in zoom-in-95">
+      
+      {/* Header */}
+      <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+        <h2 className="text-lg font-semibold text-slate-800">Upload Event Poster</h2>
+        <button
+          onClick={() => setShowImagePopup(false)}
+          className="text-slate-500 hover:text-slate-800 transition-colors duration-150"
+        >
+          ✕
+        </button>
+      </div>
+
+      {/* Body */}
+      <div className="px-6 py-5 overflow-y-auto max-h-[80vh]">
+        <Label className="text-sm font-semibold text-slate-700 mb-3 block">
+          Choose Poster
+        </Label>
+
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+          <Input
+            placeholder="Select your Poster"
+            value={formData.posterImage ? formData.posterImage.name : ""}
+            readOnly
+            className="flex-1 h-10 sm:h-12 text-base sm:text-lg border-2 border-slate-200 focus:border-[#5d33fb] rounded-xl transition-all duration-200"
+          />
+
+          <div className="relative w-full sm:w-auto">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            />
+            <Button className="bg-[#5d33fb] hover:bg-[#4c2bd9] text-white px-4 py-2 h-10 sm:h-12 w-full sm:w-auto">
+              Choose File
+            </Button>
+          </div>
+        </div>
+
+        {/* Info Section */}
+        <div className="text-xs sm:text-sm text-slate-500 mt-4 space-y-1">
+          <div>1. <b>Correct Dimensions:</b> Use 1140×300 or 180×250 sizes.</div>
+          <div>2. <b>File Format:</b> Use PNG or JPEG.</div>
+          <div>3. <b>File Size:</b> Optimize for fast upload.</div>
+          <div>4. <b>Resolution:</b> Minimum 300 DPI for clarity.</div>
+        </div>
+
+        {/* Preview */}
+        {formData.posterImage && (
+          <div className="mt-4">
+            <p className="text-sm text-slate-600 mb-2 font-medium">Preview:</p>
+            <img
+              src={image}
+              alt="Poster Preview"
+              className="w-full h-48 object-cover rounded-xl border border-slate-200 shadow-sm"
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className="flex justify-end items-center gap-3 px-6 py-4 border-t border-slate-200">
+        <Button
+          variant="outline"
+          onClick={() => setShowImagePopup(false)}
+          className="text-slate-700 border-slate-300 hover:bg-slate-100 rounded-xl"
+        >
+          Cancel
+        </Button>
+        <Button
+          onClick={handleSavePoster}
+          className="bg-[#5d33fb] hover:bg-[#4c2bd9] text-white rounded-xl"
+        >
+          Save Poster
+        </Button>
+      </div>
+    </div>
+  </div>
+)}
+
+  
+
 
       <Toast
         isOpen={toast.isOpen}

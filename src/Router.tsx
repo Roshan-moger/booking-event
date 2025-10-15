@@ -163,6 +163,18 @@ const Router: React.FC = () => {
               </ProtectedRoute>
             }
           />
+                    <Route
+            path="my-events/event/:action/:venueId"
+            element={
+              <ProtectedRoute allowedRoles={["CUSTOMER", "ORGANIZER"]}>
+                <Layout>
+                  <Suspense fallback={<SkeletonLoader />}>
+                    <CreateEvent />
+                  </Suspense>
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/payment/event/:eventId"
             element={

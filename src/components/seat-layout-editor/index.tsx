@@ -1,8 +1,7 @@
-"use client"
 
-import type React from "react"
+import  React from "react"
 import { useState, useEffect } from "react"
-import { Grid, Plus, Download } from "lucide-react"
+import { Grid, Plus } from "lucide-react"
 import Label from "../UI/label"
 import { Input } from "../UI/input"
 import { Button } from "../UI/button"

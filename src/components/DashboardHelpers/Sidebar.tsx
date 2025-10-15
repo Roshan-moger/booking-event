@@ -1,6 +1,5 @@
-"use client"
 
-import type React from "react"
+import  React from "react"
 import { useEffect, useState } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 import {
@@ -25,7 +24,6 @@ const Sidebar: React.FC = () => {
   const navigate = useNavigate()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const role = useSelector((state: InitialReduxStateProps) => state.tokenInfo.roles[0])
-  const activePath = useSelector((state: InitialReduxStateProps) => state.activePath)
   const dispatch = useDispatch()
 
   useEffect(() => {

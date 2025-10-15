@@ -12,8 +12,6 @@ import {
   PlusCircle,
   IndianRupee,
   CreditCard,
-  Eye,
-  X,
   RefreshCw,
 } from "lucide-react";
 import axiosInstance from "../../api/axiosInstance";
@@ -391,7 +389,6 @@ const EventCards: React.FC = () => {
   const [eventToDelete, setEventToDelete] = useState<Event | null>(null);
   const [showReapprove, setShowReapprove] = useState(false);
   const [eventToReapprove, setEventToReapprove] = useState<Event | null>(null);
-  const [isReapproving, setIsReapproving] = useState(false);
   const [toast, setToast] = useState<ToastProps>({
     isOpen: false,
     type: "success",
@@ -453,7 +450,6 @@ const EventCards: React.FC = () => {
   const handleReapprove = async () => {
     if (!eventToReapprove) return;
     
-    setIsReapproving(true);
     try {
       // Replace this with your actual API endpoint
       const response = await axiosInstance.put(
@@ -477,7 +473,6 @@ const EventCards: React.FC = () => {
         message: error?.response?.data?.message || "Failed to send event for re-approval. Please try again.",
       });
     } finally {
-      setIsReapproving(false);
     }
   };
 

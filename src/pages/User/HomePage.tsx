@@ -1,4 +1,3 @@
-"use client"
 
 import { useState, useEffect } from "react"
 import type { Event } from "./event-dashboard/types"

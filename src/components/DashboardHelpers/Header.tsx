@@ -1,9 +1,6 @@
-"use client";
-
 import {
   MapPin,
   Plus,
-  Search,
   User,
   LogOut,
   Settings as SettingsIcon,

@@ -3,10 +3,6 @@ import {
   ArrowLeft, 
   Home, 
   Building2, 
-  Calendar, 
-  MapPin, 
-  Search,
-  RefreshCw
 } from 'lucide-react';
 
 const NotFound: React.FC = () => {

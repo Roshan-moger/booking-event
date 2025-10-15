@@ -1,5 +1,3 @@
-"use client"
-
 import { useMemo, useState } from "react"
 import { ArrowLeft, Calendar, MapPin, Share2, Star, Tag, Users } from "lucide-react"
 import type { Event } from "../event-dashboard/types"

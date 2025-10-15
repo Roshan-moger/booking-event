@@ -1,6 +1,4 @@
-"use client";
-
-import type React from "react";
+import React from "react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -12,16 +10,12 @@ import {
   Share2,
   Edit,
   Trash2,
-  ArrowLeft,
   RefreshCw,
 } from "lucide-react";
 import { Button } from "../../components/UI/button";
 import axiosInstance from "../../api/axiosInstance";
 import Toast from "../../components/UI/toast";
 import DeletePopup from "../../components/UI/DeletePopup";
-import { useDispatch } from "react-redux";
-import type { InitialReduxStateProps } from "../../redux/redux.props";
-import { useSelector } from "react-redux";
 
 interface Venue {
   id: number;
@@ -120,9 +114,7 @@ const VenueSelectionPage: React.FC = () => {
   const [showDelete, setShowDelete] = useState(false);
   const [venueToDelete, setVenueToDelete] = useState<Venue | null>(null);
   const navigate = useNavigate();
-  const role = useSelector(
-    (state: InitialReduxStateProps) => state.tokenInfo.roles[0]
-  );
+
   const [venueToReapprove, setVenueToReapprove] = useState<Venue | null>(null);
   const [showReapproveConfirm, setShowReapproveConfirm] = useState(false);
   const [isReapproving, setIsReapproving] = useState(false);
