@@ -21,7 +21,8 @@ const Header: React.FC = () => {
   const dispatch = useDispatch();
   const userDropdownRef = useRef<HTMLDivElement>(null);
   const role = useSelector((state: InitialReduxStateProps) => state.tokenInfo.roles[0])
-
+const userName= useSelector((state: InitialReduxStateProps) => state.tokenInfo.name)
+const userEmail = useSelector((state: InitialReduxStateProps) => state.tokenInfo.email)
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -139,8 +140,8 @@ const Header: React.FC = () => {
             {isUserDropdownOpen && (
               <div className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-xl py-2 min-w-[180px] z-50 border border-gray-200">
                 <div className="px-4 py-2 border-b border-gray-100">
-                  <p className="text-sm font-medium text-gray-900">John Doe</p>
-                  <p className="text-xs text-gray-500">john.doe@email.com</p>
+                  <p className="text-sm font-medium text-gray-900">{userName}</p>
+                  <p className="text-xs text-gray-500">{userEmail}</p>
                 </div>
 
                 <button

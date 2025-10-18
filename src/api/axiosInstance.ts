@@ -31,6 +31,7 @@ axiosInstance.interceptors.request.use(
           expiryTime: decodedUser.exp
             ? new Date(decodedUser.exp * 1000).toISOString()
             : "",
+            name : decodedUser.name,
         };
           store.dispatch(update_auth_data(payload));
 

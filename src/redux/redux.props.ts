@@ -4,6 +4,7 @@ export interface InitialReduxStateProps {
     expiryTime: string;
     email: string;
     roles: string[];
+    name: string;
   };
   activePath: string;
 }

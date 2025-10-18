@@ -1,5 +1,3 @@
-"use client"
-
 import React, { Suspense, lazy } from "react"
 import { Routes, Route } from "react-router-dom"
 import Layout from "./components/DashboardHelpers/Layout"

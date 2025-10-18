@@ -8,6 +8,7 @@ const initialState: InitialReduxStateProps = {
     expiryTime: "",
     email: "",
     roles: [],
+    name : ""
   },
   activePath: "",
 };
@@ -22,6 +23,7 @@ export default function authReducer(state = initialState, action: AnyAction) {
           email: action.payload.email,
           roles: action.payload.roles,
           expiryTime: action.payload.expiryTime || "",
+          name: action.payload.name || ""
         },
       };
 

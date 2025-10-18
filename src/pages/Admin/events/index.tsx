@@ -69,7 +69,7 @@ const EventManagementTable = () => {
   const [searchTerm, setSearchTerm] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
   const [filterStatus, setFilterStatus] = useState<"ALL" | "PENDING" | "APPROVED" | "REJECTED">("PENDING")
-  const [itemsPerPage] = useState(5)
+  const [itemsPerPage] = useState(10)
   const navigate = useNavigate()
 
   const [toast, setToast] = useState({

@@ -5,6 +5,7 @@ export const update_auth_data = (payload: {
   token: string;
   roles: string[];
   email: string;
+  name:string;
 }) => ({
   type: UPDATE_AUTH_DATA,
   payload,

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useRef } from "react"
 import {
   Search,
   ChevronLeft,
@@ -44,9 +44,7 @@ const UserManagementTable = () => {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
-  const [selectedRole, setSelectedRole] = useState<
-    "ALL" | "CUSTOMER" | "ORGANIZER"
-  >("ALL")
+const selectedRoleRef = useRef<"ALL" | "CUSTOMER" | "ORGANIZER">("ALL");
   const [currentPage, setCurrentPage] = useState(0)
   const [itemsPerPage, setItemsPerPage] = useState(20)
   const [totalElements, setTotalElements] = useState(0)
@@ -91,7 +89,7 @@ const UserManagementTable = () => {
     if (role.toLocaleLowerCase() === "admin") {
       loadUsers()
     }
-  }, [currentPage, selectedRole, searchTerm, sortConfig, itemsPerPage, role])
+  }, [currentPage, selectedRoleRef.current, searchTerm, sortConfig, itemsPerPage, role])
 
   const loadUsers = async () => {
     setLoading(true)
@@ -107,9 +105,9 @@ const UserManagementTable = () => {
       }
 
       let endpoint = "/users"
-      if (selectedRole !== "ALL") {
+      if (selectedRoleRef.current !== "ALL") {
         endpoint = "/users/by-role"
-        params.append("role", selectedRole)
+        params.append("role", selectedRoleRef.current)
       }
 
       const res = await axiosInstance.get(`${endpoint}?${params.toString()}`)
@@ -158,10 +156,10 @@ const UserManagementTable = () => {
     setCurrentPage(0)
   }
 
-  const handleRoleChange = (role: "ALL" | "CUSTOMER" | "ORGANIZER") => {
-    setSelectedRole(role)
-    setCurrentPage(0)
-  }
+  // const handleRoleChange = (role: "ALL" | "CUSTOMER" | "ORGANIZER") => {
+  //   setSelectedRole(role)
+  //   setCurrentPage(0)
+  // }
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value)
@@ -297,7 +295,7 @@ const UserManagementTable = () => {
                 className="pl-10 pr-4 py-2 border border-slate-300 rounded-lg text-sm w-full"
               />
             </div>
-            <select
+            {/* <select
               value={selectedRole}
               onChange={(e) =>
                 handleRoleChange(e.target.value as "ALL" | "CUSTOMER" | "ORGANIZER")
@@ -307,7 +305,7 @@ const UserManagementTable = () => {
               <option value="ALL">All Roles</option>
               <option value="CUSTOMER">Users</option>
               <option value="ORGANIZER">Organizers</option>
-            </select>
+            </select> */}
           </div>
 
           {/* Table */}

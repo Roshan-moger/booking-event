@@ -31,6 +31,7 @@ interface DecodedToken {
   roles: string[];    // user roles
   iat: number;
   exp: number;
+  name: string;
 }
 interface ToastProps  {
 isOpen: boolean;
@@ -166,6 +167,8 @@ const decodedUser = jwtDecode<DecodedToken>(finalToken.replace("Bearer ", ""));
     roles: decodedUser.roles || [],
     email: decodedUser.sub,
     expiryTime: decodedUser.exp ? new Date(decodedUser.exp * 1000).toISOString() : "",
+                name : decodedUser.name,
+
   };
 
 // ✅ Dispatch to Redux
@@ -216,7 +219,7 @@ dispatch(update_auth_data(payload));
           errorMessage = "Too many login attempts. Please try again later";
           break;
         case 500:
-          errorMessage = "Server error. Please try again later";
+          errorMessage = "Please try again later";
           break;
         default:
           errorMessage = message || "Login failed";
