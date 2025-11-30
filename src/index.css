@@ -1,5 +1,11 @@
 @import "tailwindcss";
 @import "leaflet/dist/leaflet.css";
+@import "slick-carousel/slick/slick.css";
+@import "slick-carousel/slick/slick-theme.css";
+* {
+    --tw-shadow-color: rgba(0, 0, 0, 0.25) !important;
+}
+
 .toast-container {
     position: fixed;
     top: 1rem;
@@ -303,6 +309,15 @@
     /* IE and Edge */
     scrollbar-width: none;
     /* Firefox */
+}
+
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
 }
 
 @keyframes fadeIn {

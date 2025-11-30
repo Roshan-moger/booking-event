@@ -1,4 +1,4 @@
-import  { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   Check,
   X,
@@ -28,7 +28,11 @@ interface Venue {
   shared: boolean;
   status: "PENDING" | "APPROVED" | "REJECTED";
 }
-
+interface RejectModalState {
+  isOpen: boolean;
+  venueId?: number | null;
+  remarks: string;
+}
 const VenueManagementTable = () => {
   const [venues, setVenues] = useState<Venue[]>([]);
   const [loading, setLoading] = useState(false);
@@ -44,39 +48,39 @@ const VenueManagementTable = () => {
     message: "",
   });
   const navigate = useNavigate();
-
+  const [approveModel, setApproveModel] = useState<boolean>(false);
+  const [rejectModel, setRejectModel] = useState<boolean>(false);
   const role = useSelector(
     (state: InitialReduxStateProps) => state.tokenInfo.roles[0]
   );
 
-    const [venueDetailsModal, setVenueDetailsModal] = useState<{
-  isOpen: boolean;
-  venueId: number | null;
-  data: Venue | null;
-  loading: boolean;
-}>({
-  isOpen: false,
-  venueId: null,
-  data: null,
-  loading: false,
-});
+  const [venueDetailsModal, setVenueDetailsModal] = useState<{
+    isOpen: boolean;
+    venueId: number | null;
+    data: Venue | null;
+    loading: boolean;
+  }>({
+    isOpen: false,
+    venueId: null,
+    data: null,
+    loading: false,
+  });
 
   useEffect(() => {
-    if (role.toLocaleLowerCase() !== "admin") {
+    if (role !== "ADMIN") {
       navigate("/notfound"); // redirect if not admin
     }
   }, [role, navigate]);
   // Reject modal state
-  const [rejectModal, setRejectModal] = useState({
+  const [rejectModal, setRejectModal] = useState<RejectModalState>({
     isOpen: false,
-    venueId: 0,
+    venueId: null,
     remarks: "",
   });
 
   useEffect(() => {
-    if (role.toLocaleLowerCase() === "admin") {
       loadVenues();
-    }
+
   }, [role]);
 
   const loadVenues = async () => {
@@ -119,7 +123,7 @@ const VenueManagementTable = () => {
 
   const handlePageChange = (page: number) => setCurrentPage(page);
 
-  const handleApprove = async (venueId: number) => {
+  const handleApprove = async (venueId: number | null) => {
     try {
       await axiosInstance
         .put(`/admin/venues/${venueId}/approve`)
@@ -149,7 +153,7 @@ const VenueManagementTable = () => {
   };
 
   // Open Reject Modal
-  const openRejectModal = (venueId: number) => {
+  const openRejectModal = (venueId: number | null) => {
     setRejectModal({ isOpen: true, venueId, remarks: "" });
   };
 
@@ -222,29 +226,34 @@ const VenueManagementTable = () => {
     );
   };
 
-
-
-// Fetch venue details
-const fetchVenueDetails = async (venueId: number) => {
-  setVenueDetailsModal({ isOpen: true, venueId, data: null, loading: true });
-  try {
-    const res = await axiosInstance.get(`/organizer/venues/getbyid/${venueId}`);
-    setVenueDetailsModal({
-      isOpen: true,
-      venueId,
-      data: res.data,
-      loading: false,
-    });
-  } catch (err) {
-    console.error("Failed to fetch venue details", err);
-    // setToast({
-    //   isOpen: true,
-    //   type: "error",
-    //   message: "Failed to load venue details",
-    // });
-    setVenueDetailsModal({ isOpen: false, venueId: null, data: null, loading: false });
-  }
-};
+  // Fetch venue details
+  const fetchVenueDetails = async (venueId: number) => {
+    setVenueDetailsModal({ isOpen: true, venueId, data: null, loading: true });
+    try {
+      const res = await axiosInstance.get(
+        `/organizer/venues/getbyid/${venueId}`
+      );
+      setVenueDetailsModal({
+        isOpen: true,
+        venueId,
+        data: res.data,
+        loading: false,
+      });
+    } catch (err) {
+      console.error("Failed to fetch venue details", err);
+      // setToast({
+      //   isOpen: true,
+      //   type: "error",
+      //   message: "Failed to load venue details",
+      // });
+      setVenueDetailsModal({
+        isOpen: false,
+        venueId: null,
+        data: null,
+        loading: false,
+      });
+    }
+  };
   return (
     <div className="bg-slate-50">
       {/* Header */}
@@ -392,7 +401,10 @@ const fetchVenueDetails = async (venueId: number) => {
                             {venue.status === "PENDING" ? (
                               <>
                                 <button
-                                  onClick={() => handleApprove(venue.id)}
+                                  onClick={() => {
+                                    setApproveModel(true);
+                                    fetchVenueDetails(venue.id);
+                                  }}
                                   disabled={loading}
                                   className="flex items-center gap-1 px-3 py-2 bg-emerald-500 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
@@ -400,7 +412,11 @@ const fetchVenueDetails = async (venueId: number) => {
                                   Approve
                                 </button>
                                 <button
-                                  onClick={() => openRejectModal(venue.id)}
+                                  onClick={() => {
+                                    // setRejectModel(true);
+                                    // fetchVenueDetails(venue.id);
+                                    openRejectModal(venue.id)
+                                  }}
                                   disabled={loading}
                                   className="flex items-center gap-1 px-3 py-2 bg-red-500 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
@@ -409,8 +425,10 @@ const fetchVenueDetails = async (venueId: number) => {
                                 </button>
                               </>
                             ) : (
-                              <button className="flex items-center gap-1 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm font-medium rounded-lg transition-colors"
-                              onClick={()=>fetchVenueDetails(venue.id)}>
+                              <button
+                                className="flex items-center gap-1 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm font-medium rounded-lg transition-colors"
+                                onClick={() => fetchVenueDetails(venue.id)}
+                              >
                                 <Eye className="w-4 h-4" />
                                 View
                               </button>
@@ -588,209 +606,258 @@ const fetchVenueDetails = async (venueId: number) => {
           </div>
         </div>
       )}
-{venueDetailsModal.isOpen && (
-  <div className="fixed inset-0 bg-black/50  flex items-center justify-center z-50 p-3 animate-in fade-in duration-200">
-    <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg transform transition-all duration-300 animate-in zoom-in-95">
-      {/* Header */}
-      <div className="relative px-6 py-4 border-b border-gray-200">
-        <div className="flex justify-between items-center">
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900">Venue Details</h2>
-            <p className="text-gray-500 text-xs mt-1">Complete venue information</p>
-          </div>
-          <button
-            onClick={() =>
-              setVenueDetailsModal({
-                isOpen: false,
-                venueId: null,
-                data: null,
-                loading: false,
-              })
-            }
-            className="p-1.5 rounded-full hover:bg-gray-100 transition-colors"
-          >
-            <X className="w-5 h-5 text-gray-600" />
-          </button>
-        </div>
-      </div>
-
-      {/* Body */}
-      <div className="p-6 text-sm">
-        {venueDetailsModal.loading ? (
-          <div className="flex flex-col justify-center items-center py-12">
-            <div className="relative">
-              <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200"></div>
-              <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-gray-900 absolute top-0 left-0"></div>
-            </div>
-            <p className="mt-4 text-gray-600 font-medium text-sm">
-              Loading venue details...
-            </p>
-          </div>
-        ) : venueDetailsModal.data ? (
-          <div className="space-y-4">
-            {/* Venue Name Card */}
-            <div className="bg-white rounded-xl p-4 border border-gray-200">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
-                    Venue Name
-                  </h3>
-                  <p className="text-xl font-bold text-gray-900">
-                    {venueDetailsModal.data.name}
+      {venueDetailsModal.isOpen && (
+        <div className="fixed inset-0 bg-black/50  flex items-center justify-center z-50 p-3 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg transform transition-all duration-300 animate-in zoom-in-95">
+            {/* Header */}
+            <div className="relative px-6 py-4 border-b border-gray-200">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    Venue Details
+                  </h2>
+                  <p className="text-gray-500 text-xs mt-1">
+                    Complete venue information
                   </p>
                 </div>
-                <div className="bg-gray-50 rounded-lg p-2">
-                  <svg
-                    className="w-6 h-6 text-gray-700"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                    />
-                  </svg>
-                </div>
+                <button
+                  onClick={() =>
+                    setVenueDetailsModal({
+                      isOpen: false,
+                      venueId: null,
+                      data: null,
+                      loading: false,
+                    })
+                  }
+                  className="p-1.5 rounded-full hover:bg-gray-100 transition-colors"
+                >
+                  <X className="w-5 h-5 text-gray-600" />
+                </button>
               </div>
             </div>
 
-            {/* Address Card */}
-            <div className="bg-white rounded-xl p-4 border border-gray-200">
-              <div className="flex items-start space-x-3">
-                <div className="bg-gray-50 rounded-lg p-2 flex-shrink-0">
-                  <svg
-                    className="w-5 h-5 text-gray-700"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                    />
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                    />
-                  </svg>
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
-                    Location Address
-                  </h3>
-                  <p className="text-sm text-gray-900 font-medium leading-relaxed">
-                    {venueDetailsModal.data.address}
-                  </p>
-                  <p className="text-sm text-gray-700 mt-1">
-                    {venueDetailsModal.data.city},{" "}
-                    {venueDetailsModal.data.state} -{" "}
-                    {venueDetailsModal.data.postalCode}
+            {/* Body */}
+            <div className="p-6 text-sm">
+              {venueDetailsModal.loading ? (
+                <div className="flex flex-col justify-center items-center py-12">
+                  <div className="relative">
+                    <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200"></div>
+                    <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-gray-900 absolute top-0 left-0"></div>
+                  </div>
+                  <p className="mt-4 text-gray-600 font-medium text-sm">
+                    Loading venue details...
                   </p>
                 </div>
-              </div>
-            </div>
+              ) : venueDetailsModal.data ? (
+                <div className="space-y-4">
+                  {/* Venue Name Card */}
+                  <div className="bg-white rounded-xl p-4 border border-gray-200">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                          Venue Name
+                        </h3>
+                        <p className="text-xl font-bold text-gray-900">
+                          {venueDetailsModal.data.name}
+                        </p>
+                      </div>
+                      <div className="bg-gray-50 rounded-lg p-2">
+                        <svg
+                          className="w-6 h-6 text-gray-700"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                          />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
 
-            {/* Type + Status Grid */}
-            <div className="grid grid-cols-2 gap-3">
-              {/* Type Card */}
-              <div className="bg-white rounded-xl p-4 border border-gray-200 hover:border-gray-300 transition-colors">
-                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-                  Venue Type
-                </h3>
-                <div className="flex items-center space-x-2">
-                  <div className="p-1.5 rounded-md bg-gray-100">
+                  {/* Address Card */}
+                  <div className="bg-white rounded-xl p-4 border border-gray-200">
+                    <div className="flex items-start space-x-3">
+                      <div className="bg-gray-50 rounded-lg p-2 flex-shrink-0">
+                        <svg
+                          className="w-5 h-5 text-gray-700"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                          />
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                          />
+                        </svg>
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                          Location Address
+                        </h3>
+                        <p className="text-sm text-gray-900 font-medium leading-relaxed">
+                          {venueDetailsModal.data.address}
+                        </p>
+                        <p className="text-sm text-gray-700 mt-1">
+                          {venueDetailsModal.data.city},{" "}
+                          {venueDetailsModal.data.state} -{" "}
+                          {venueDetailsModal.data.postalCode}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Type + Status Grid */}
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* Type Card */}
+                    <div className="bg-white rounded-xl p-4 border border-gray-200 hover:border-gray-300 transition-colors">
+                      <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                        Venue Type
+                      </h3>
+                      <div className="flex items-center space-x-2">
+                        <div className="p-1.5 rounded-md bg-gray-100">
+                          <svg
+                            className="w-4 h-4 text-gray-700"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            {venueDetailsModal.data.shared ? (
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M17 20h5v-2a3 3 0 00-5.356-1.857M9 20H4v-2a3 3 0 015.356-1.857M15 11a4 4 0 11-8 0 4 4 0 018 0z"
+                              />
+                            ) : (
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                              />
+                            )}
+                          </svg>
+                        </div>
+                        <span className="px-3 py-1 text-xs font-semibold rounded-lg bg-gray-100 text-gray-700">
+                          {venueDetailsModal.data.shared ? "Shared" : "Private"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Status Card */}
+                    <div className="bg-white rounded-xl p-4 border border-gray-200 hover:border-gray-300 transition-colors">
+                      <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                        Current Status
+                      </h3>
+                      <div className="flex items-center">
+                        {getStatusBadge(venueDetailsModal.data.status)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <div className="bg-gray-100 rounded-full p-4 mb-3">
                     <svg
-                      className="w-4 h-4 text-gray-700"
+                      className="w-10 h-10 text-gray-400"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
                     >
-                      {venueDetailsModal.data.shared ? (
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M17 20h5v-2a3 3 0 00-5.356-1.857M9 20H4v-2a3 3 0 015.356-1.857M15 11a4 4 0 11-8 0 4 4 0 018 0z"
-                        />
-                      ) : (
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                        />
-                      )}
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+                      />
                     </svg>
                   </div>
-                  <span className="px-3 py-1 text-xs font-semibold rounded-lg bg-gray-100 text-gray-700">
-                    {venueDetailsModal.data.shared ? "Shared" : "Private"}
-                  </span>
+                  <p className="text-gray-500 font-medium text-sm">
+                    No venue details found
+                  </p>
+                  <p className="text-gray-400 text-xs mt-1">
+                    Please try again later
+                  </p>
                 </div>
-              </div>
+              )}
+            </div>
 
-              {/* Status Card */}
-              <div className="bg-white rounded-xl p-4 border border-gray-200 hover:border-gray-300 transition-colors">
-                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-                  Current Status
-                </h3>
-                <div className="flex items-center">
-                  {getStatusBadge(venueDetailsModal.data.status)}
-                </div>
+            {/* Footer */}
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-2xl flex justify-between items-center">
+              <p className="text-xs text-gray-500">
+                Last updated: {new Date().toLocaleDateString()}
+              </p>
+              <div className="space-x-1.5">
+                <button
+                  onClick={() =>
+                    setVenueDetailsModal({
+                      isOpen: false,
+                      venueId: null,
+                      data: null,
+                      loading: false,
+                    })
+                  }
+                  className="px-6 py-2 bg-gray-900 text-white text-xs font-semibold rounded-lg hover:bg-gray-800 transform hover:scale-105 transition-all duration-200 shadow-md"
+                >
+                  Close
+                </button>
+                {approveModel && (
+                  <button
+                    onClick={() => {
+                      handleApprove(venueDetailsModal.venueId);
+
+                      setVenueDetailsModal({
+                        isOpen: false,
+                        venueId: null,
+                        data: null,
+                        loading: false,
+                      });
+
+                      setApproveModel(false);
+                    }}
+                    className="px-6 py-2 bg-green-500 text-white text-xs font-semibold rounded-lg hover:bg-gray-800 transform hover:scale-105 transition-all duration-200 shadow-md"
+                  >
+                    Approve
+                  </button>
+                )}
+
+                {rejectModel && (
+                  <button
+                    onClick={() => {
+                      openRejectModal(venueDetailsModal.venueId);
+
+                      setVenueDetailsModal({
+                        isOpen: false,
+                        venueId: null,
+                        data: null,
+                        loading: false,
+                      });
+
+                      setRejectModel(false);
+                    }}
+                    className="px-6 py-2 bg-red-500 text-white text-xs font-semibold rounded-lg hover:bg-gray-800 transform hover:scale-105 transition-all duration-200 shadow-md"
+                  >
+                    Reject
+                  </button>
+                )}
               </div>
             </div>
           </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center py-12">
-            <div className="bg-gray-100 rounded-full p-4 mb-3">
-              <svg
-                className="w-10 h-10 text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
-                />
-              </svg>
-            </div>
-            <p className="text-gray-500 font-medium text-sm">No venue details found</p>
-            <p className="text-gray-400 text-xs mt-1">Please try again later</p>
-          </div>
-        )}
-      </div>
-
-      {/* Footer */}
-      <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-2xl flex justify-between items-center">
-        <p className="text-xs text-gray-500">
-          Last updated: {new Date().toLocaleDateString()}
-        </p>
-        <button
-          onClick={() =>
-            setVenueDetailsModal({
-              isOpen: false,
-              venueId: null,
-              data: null,
-              loading: false,
-            })
-          }
-          className="px-6 py-2 bg-gray-900 text-white text-xs font-semibold rounded-lg hover:bg-gray-800 transform hover:scale-105 transition-all duration-200 shadow-md"
-        >
-          Close
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+        </div>
+      )}
 
       {/* Toast */}
       <Toast

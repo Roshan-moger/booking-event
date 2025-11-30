@@ -1,301 +1,249 @@
-import { useState } from "react"
-import { MapPin, Calendar, Clock, Star, Zap, X, Download, Share2, ArrowLeft } from "lucide-react"
-import { Button } from "../../components/UI/button"
+import { useState, useMemo, useEffect } from "react"
+import { Eye } from "lucide-react"
+import axiosInstance from "../../api/axiosInstance"
+import TicketPopupModal from "./ticket-popup-modal.tsx"
 
+export interface TicketItem {
+  id: number
+  seatNumber: string
+  categoryName: string
+  price: number
+}
 
-const MyTickets = () => {
-  const [activeTab, setActiveTab] = useState("active")
-  const [selectedTicket, setSelectedTicket] = useState<any>(null)
+export interface Event {
+  id: number
+  title: string
+  mode: string
+  startDate: string
+  endDate: string
+  venueName: string
+}
 
-  const tickets = [
-    {
-      id: 1,
-      title: "Spider-Man: No Way Home",
-      date: "16 March 2025",
-      time: "14:40",
-      theater: "Mantri Mall",
-      screen: "Screen 3",
-      seats: "F12, F13",
-      rating: 8.9,
-      status: "active",
-      genre: "Action • Adventure",
-      bookingId: "BK123456789",
-    },
-    {
-      id: 2,
-      title: "Tenet",
-      date: "16 March 2025",
-      time: "14:40",
-      theater: "Mantri Mall",
-      screen: "Screen 1",
-      seats: "G8, G9",
-      rating: 7.8,
-      status: "active",
-      genre: "Sci-Fi • Thriller",
-      bookingId: "BK987654321",
-    },
-    {
-      id: 3,
-      title: "Dune: Part Two",
-      date: "14 March 2025",
-      time: "19:30",
-      theater: "Forum Mall",
-      screen: "IMAX",
-      seats: "D15, D16",
-      rating: 8.5,
-      status: "used",
-      genre: "Sci-Fi • Drama",
-      bookingId: "BK456789123",
-    },
-    
-  ]
+export interface Payment {
+  id: number
+  method: string
+  status: string
+  paymentId: string
+  amount: number
+}
 
-  const activeTickets = tickets.filter((t) => t.status === "active")
-  const usedTickets = tickets.filter((t) => t.status === "used")
-  const displayTickets = activeTab === "active" ? activeTickets : usedTickets
+export interface Ticket {
+  id: number
+  createdAt: string
+  expiresAt: string
+  status: string
+  amount: number
+  reservedQuantity?: number | null
+  cgst: number
+  sgst: number
+  totalAmount: number
+  ticketCode: string | null
+  ticketQrBase64: string | null
+  ticketIssuedAt: string | null
+  ticketValidUntil: string | null
+  checkedInAt: string | null
+  checkedInBy: string | null
+  event: Event
+  payment: Payment
+  items: TicketItem[]
+}
 
-  const generateQRPattern = () => {
-    const patterns = []
-    for (let i = 0; i < 21; i++) {
-      const row = []
-      for (let j = 0; j < 21; j++) {
-        // Create a more realistic QR code pattern
-        const isCorner = (i < 7 && j < 7) || (i < 7 && j > 13) || (i > 13 && j < 7)
-        const isBorder = i === 0 || i === 20 || j === 0 || j === 20
-        const isPattern = (i + j) % 3 === 0 || (i * j) % 5 === 0
-        row.push(isCorner || isBorder || isPattern)
+export default function TicketsPage() {
+  const [tickets, setTickets] = useState<Ticket[]>()
+  const [activeTab, setActiveTab] = useState<"used" | "notused">("notused")
+  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null)
+
+  useEffect(() => {
+    getTicket()
+  }, [])
+
+  const getTicket = async () => {
+    await axiosInstance
+      .get("/users/my")
+      .then((response) => {
+        if (response.status === 200) {
+          setTickets(response.data)
+        }
+      })
+      .catch((error) => {
+        console.log(error)
+      })
+  }
+
+  const filteredTickets = useMemo(() => {
+    return tickets?.filter((t) => {
+      if (activeTab === "used") {
+        return t.checkedInAt !== null
+      } else {
+        return t.checkedInAt === null
       }
-      patterns.push(row)
+    })
+  }, [tickets, activeTab])
+
+
+
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: selectedTicket?.event.title,
+        text: `Check out my ticket for ${selectedTicket?.event.title}`,
+        url: window.location.href,
+      })
+    } else {
+      alert("Share not supported on this browser")
     }
-    return patterns
   }
 
   return (
-    <div className="bg-gray-50 overflow-y-auto">
-      <div className="">
-        {/* Header */}
-      <div className="bg-white border-b border-slate-200">
-        <div className="px-6 py-6">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => window.history.back()}
-              className="flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back
-            </button>
-            <div className="h-6 w-px bg-slate-300" />
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900">My Tickets</h1>
-              <p className="text-sm text-slate-600 mt-1">
-                Your movie experiences await
-              </p>
-            </div>
+    <div className="min-h-screen bg-white">
+      <div className="bg-white border-b border-blue-100 sticky top-0 z-10 shadow-sm">
+        <div className="px-6 py-4 flex flex-row items-start sm:items-center justify-between gap-4 max-w-7xl mx-auto">
+          <div>
+            <h1 className="text-3xl font-bold text-slate-900">My Tickets</h1>
+            <p className="text-sm text-slate-600 mt-1">
+              {filteredTickets?.length} {activeTab === "used" ? "used" : "unused"} tickets
+            </p>
+          </div>
+          <div className="bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-700 px-4 py-2 rounded-xl flex items-center gap-2 font-bold shadow-sm border border-blue-200">
+            <span className="text-lg">🎫</span>
+            <span>{filteredTickets?.length}</span>
           </div>
         </div>
       </div>
 
-
-        {/* Tabs */}
-        <div className="flex gap-4 m-6">
-          <Button
-            variant={activeTab === "active" ? "default" : "ghost"}
-            onClick={() => setActiveTab("active")}
+      {/* Tabs */}
+      <div className="bg-white  sticky mt-3 top-16 z-10">
+        <div className="px-6 max-w-7xl mx-auto flex gap-4">
+          <button
+            onClick={() => setActiveTab("notused")}
+            className={`py-2 px-4 border-b-3 font-semibold  rounded transition-all cursor-pointer  ${
+              activeTab === "notused"
+                ? "border-blue-600 text-blue-600 bg-blue-50"
+                : "border-transparent text-slate-600 hover:text-slate-900"
+            }`}
           >
-            Active ({activeTickets.length})
-          </Button>
-          <Button
-            variant={activeTab === "used" ? "secondary" : "ghost"}
+            Not Used
+          </button>
+          <button
             onClick={() => setActiveTab("used")}
+            className={`py-2 px-4 border-b-3  rounded font-semibold transition-all cursor-pointer ${
+              activeTab === "used"
+                ? "border-blue-600 text-blue-600  bg-blue-50"
+                : "border-transparent text-slate-600 hover:text-slate-900"
+            }`}
           >
-            History ({usedTickets.length})
-          </Button>
-        </div>
-
-        {/* Tickets */}
-        <div className="space-y-4 m-6">
-          {displayTickets.map((ticket) => (
-            <div
-              key={ticket.id}
-              className="bg-white border border-gray-200 rounded-lg p-5 flex items-center justify-between shadow-sm hover:shadow-md transition-shadow"
-            >
-              <div className="flex flex-col gap-2">
-                <h3 className="text-lg font-semibold text-gray-800">
-                  {ticket.title}
-                </h3>
-                <p className="text-sm text-gray-500">{ticket.genre}</p>
-
-                <div className="grid grid-cols-2 gap-4 text-sm text-gray-600 mt-2">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-blue-500" />
-                    <span>{ticket.date}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-green-500" />
-                    <span>{ticket.time}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-purple-500" />
-                    <span>{ticket.theater}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Zap className="w-4 h-4 text-orange-500" />
-                    <span>{ticket.seats}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="ml-6 flex flex-col items-end gap-2">
-                <span className="flex items-center text-yellow-600 font-medium text-sm">
-                  <Star className="w-4 h-4 mr-1" />
-                  {ticket.rating}
-                </span>
-
-                {ticket.status === "active" ? (
-                  <Button
-                    variant="default"
-                    onClick={() => setSelectedTicket(ticket as any)}
-                  >
-                    Show QR
-                  </Button>
-                ) : (
-                  <span className="px-4 py-2 text-sm bg-gray-100 text-gray-500 rounded-md">
-                    Used
-                  </span>
-                )}
-              </div>
-            </div>
-          ))}
-
-          {displayTickets.length === 0 && (
-            <div className="text-center py-10 text-gray-500">
-              No {activeTab} tickets found
-            </div>
-          )}
+            Used
+          </button>
         </div>
       </div>
 
-      {/* Enhanced QR Popup */}
- {selectedTicket && (
-  <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-    <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl flex flex-col max-h-[85vh] mt-10">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 relative flex-shrink-0">
-        <button
-          onClick={() => setSelectedTicket(null)}
-          className="absolute top-4 right-4 text-white/80 hover:text-white"
-        >
-          <X className="w-6 h-6" />
-        </button>
-        <h2 className="text-xl font-bold mb-1">🎬 Your Ticket</h2>
-        <p className="text-blue-100 text-sm">Ready to enjoy the show!</p>
-      </div>
-
-      {/* Scrollable Content */}
-      <div className="p-6 overflow-y-auto flex-1">
-{/* Movie Info */}
-<div className="text-center mb-6">
-  {/* Title */}
-  <h3 className="text-xl font-bold text-gray-900 mb-4 truncate">
-    {selectedTicket.title as any}
-  </h3>
-
-  {/* Details */}
-  <div className="grid grid-cols-2 gap-6 text-sm text-gray-700">
-    {/* Date & Time */}
-    <div>
-      <p className="font-semibold text-gray-800 mb-1">Date & Time</p>
-      <p>
-        {selectedTicket.date as any}{" "}
-        <span className="ml-1">{selectedTicket.time}</span>
-      </p>
-    </div>
-
-    {/* Location */}
-    <div>
-      <p className="font-semibold text-gray-800 mb-1">Location</p>
-      <p>
-        {selectedTicket.theater}{" "}
-        <span className="ml-1">{selectedTicket.screen}</span>
-      </p>
-    </div>
-  </div>
-
-  {/* Seats */}
-  <div className="mt-6">
-    <p className="font-semibold text-gray-800">Seats</p>
-    <p className="text-lg font-bold text-blue-600">
-      {selectedTicket.seats}
-    </p>
-  </div>
-</div>
-
-        {/* Beautiful QR Code */}
-        <div className="flex justify-center items-center my-6">
-          <div className="relative">
-            {/* QR Code Container */}
-            <div className="bg-white p-4 rounded-xl shadow-lg border-2 border-gray-100">
-              <div className="w-48 h-48 bg-white rounded-lg overflow-hidden">
-                <div className="grid grid-cols-21 gap-0 w-full h-full">
-                  {generateQRPattern().map((row, i) =>
-                    row.map((cell, j) => (
-                      <div
-                        key={`${i}-${j}`}
-                        className={`${
-                          cell ? "bg-gray-900" : "bg-white"
-                        } aspect-square`}
-                        style={{
-                          width: "calc(100% / 21)",
-                          height: "calc(100% / 21)",
-                        }}
-                      />
-                    ))
-                  )}
-                </div>
-              </div>
-
-              {/* QR Code Center Logo */}
-              {/* <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-12 h-12 bg-white rounded-lg shadow-md flex items-center justify-center border-2 border-gray-200">
-                  <span className="text-lg">🎬</span>
-                </div>
-              </div> */}
-            </div>
+      {/* Tickets List */}
+      <div className="px-6 py-8 max-w-7xl mx-auto">
+        {filteredTickets?.length === 0 ? (
+          <div className="text-center py-16">
+            <p className="text-slate-500 text-lg">No {activeTab === "used" ? "used" : "unused"} tickets found</p>
           </div>
-        </div>
+        ) : (
+          <div className="space-y-4">
+            {filteredTickets?.map((ticket) => (
+              <div
+                key={ticket.id}
+                className="bg-white border border-slate-200 rounded-xl overflow-hidden hover:shadow-md transition-shadow"
+              >
+                <div className="flex flex-col md:flex-row items-stretch">
+                  {/* Left Content */}
+                  <div className="flex-1 p-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <div>
+                        <h3 className="text-xl font-bold text-slate-900">{ticket.event.title}</h3>
+                        <p className="text-sm text-slate-600 mt-1">📍 {ticket.event.venueName}</p>
+                      </div>
+                      <div className="ml-4">
+                        {ticket.checkedInAt ? (
+                          <div className="inline-block bg-green-50 text-green-700 text-xs font-bold px-3 py-2 rounded-lg border border-green-200">
+                            ✓ Used
+                          </div>
+                        ) : (
+                          <div className="inline-block bg-yellow-50 text-yellow-700 text-xs font-bold px-3 py-2 rounded-lg border border-yellow-200">
+                            ⏳ Not Used
+                          </div>
+                        )}
+                      </div>
+                    </div>
 
-        {/* Booking ID */}
-        <div className="text-center mb-6">
-          <p className="text-xs text-gray-500 mb-1">Booking ID</p>
-          <p className="font-mono text-sm font-bold text-gray-800 bg-gray-100 px-3 py-1 rounded-full inline-block">
-            {selectedTicket.bookingId}
-          </p>
-        </div>
+                    {/* Seats */}
+                    <div className="mb-4">
+                      <p className="text-xs text-slate-600 font-semibold mb-2">SEATS</p>
+                      <div className="flex gap-2 flex-wrap">
+                        {ticket.items.map((item) => (
+                          <span
+                            key={item.id}
+                            className="text-sm font-semibold text-blue-600 bg-blue-50 px-3 py-1 rounded-lg border border-blue-200"
+                          >
+                            {item.seatNumber} <span className="text-slate-500">({item.categoryName})</span>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
 
-        {/* Action Buttons */}
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          <Button variant="outline" size="sm" className="w-full">
-            <Download className="w-4 h-4 mr-2" /> Download
-          </Button>
+                    {/* Price & Check-in Info */}
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-slate-600">Amount</p>
+                        <p className="font-bold text-slate-900">₹{(ticket.amount ?? 0).toFixed(2)}</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-600">Total</p>
+                        <p className="font-bold text-blue-600">₹{(ticket.totalAmount ?? 0).toFixed(2)}</p>
+                      </div>
+                      {ticket.checkedInAt && (
+                        <div className="col-span-2">
+                          <p className="text-slate-600 text-xs">
+                            Checked in: {new Date(ticket.checkedInAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
 
-          <Button variant="outline" size="sm" className="w-full">
-            <Share2 className="w-4 h-4 mr-2" /> Share
-          </Button>
-        </div>
-
-        {/* Instructions */}
-        <div className="p-3 bg-blue-50 rounded-lg">
-          <p className="text-xs text-blue-700 text-center">
-            📱 Show this QR code at the theater entrance for quick entry
-          </p>
-        </div>
+                  {/* Right QR Code Section */}
+                  <div className="flex flex-col items-center justify-center p-6 bg-slate-50 border-l border-slate-200 md:w-48">
+                    {ticket.ticketQrBase64 ? (
+                      <div className="text-center flex flex-col  justify-center items-center">
+                        <div className="w-32 h-32 mb-3 rounded-lg overflow-hidden border-2 border-slate-300 transition-all">
+                          <img
+                            src={`data:image/png;base64,${ticket.ticketQrBase64}`}
+                            alt="QR Code"
+                            className="w-full h-full object-contain"
+                          />
+                        </div>
+                        <button
+                          onClick={() => setSelectedTicket(ticket)}
+                          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg text-sm transition-colors flex items-center justify-center gap-2 w-full"
+                        >
+                          <Eye className="w-4 h-4" />
+                          Show QR Code
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="text-center">
+                        <p className="text-slate-600 font-semibold text-sm">No QR Code</p>
+                        <p className="text-slate-500 text-xs mt-1">This ticket is not yet used</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
-    </div>
-  </div>
-)}
 
+      <TicketPopupModal
+        ticket={selectedTicket}
+        onClose={() => setSelectedTicket(null)}
+        onShare={handleShare}
+      />
     </div>
   )
 }
-
-export default MyTickets

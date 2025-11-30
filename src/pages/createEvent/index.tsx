@@ -1,5 +1,4 @@
-
-import  React from "react";
+import React from "react";
 import { useEffect, useState } from "react";
 import { Calendar, Clock, ArrowLeft } from "lucide-react";
 import DatePicker from "react-datepicker";
@@ -14,15 +13,13 @@ import axiosInstance from "../../api/axiosInstance";
 import { useNavigate, useParams } from "react-router-dom";
 
 
-interface EventCategory {
-  name: string;
-  price: number;
-}
 
 interface SeatLayout {
   row: string;
   number: number;
   categoryName: string;
+  color: string;
+  price: number;
 }
 
 interface EventFormData {
@@ -31,14 +28,14 @@ interface EventFormData {
   venueId: number;
   selectedDate: Date | null;
   selectedTime: Date | null;
-  selectedTags: string[];
+  selectedTags: any;
   ticketType: "WITH_TICKETING" | "PROMOTION_ONLY";
   seatingType: "GENERAL_ADMISSION" | "SEAT_LAYOUT";
   capacity: string;
   ticketPrice: string;
   rows: string;
   columns: string;
-  categories: EventCategory[];
+  categories: any[];
   layout: SeatLayout[];
   posterImage?: File;
 }
@@ -47,6 +44,12 @@ interface ToastProps {
   isOpen: boolean;
   message: string;
   type?: "success" | "error" | "info";
+}
+
+interface TagCategory {
+  id?: number;
+  name: string;
+  color: string;
 }
 
 const CreateEvent = () => {
@@ -59,17 +62,14 @@ const CreateEvent = () => {
     venueId: Number.parseInt(venueId as string),
     selectedDate: new Date(),
     selectedTime: new Date(),
-    selectedTags: [],
+    selectedTags: 0,
     ticketType: "WITH_TICKETING",
     seatingType: "GENERAL_ADMISSION",
     capacity: "",
     ticketPrice: "",
     rows: "5",
     columns: "10",
-    categories: [
-      { name: "Regular", price: 1000 },
-      { name: "VIP", price: 2000 },
-    ],
+    categories: [],
     layout: [],
   });
   const [image, setImage] = useState("");
@@ -79,9 +79,10 @@ const CreateEvent = () => {
     message: "",
   });
 
+  const [tagCategory, setTagCategory] = useState<TagCategory[]>([]);
+  const [showImagePopup, setShowImagePopup] = useState<boolean>(false);
+  const [eventId, setEventId] = useState("");
 
-  const [showImagePopup, setShowImagePopup] = useState<boolean>(false)
-const[eventId, setEventId]= useState("")
   const showToast = (
     message: string,
     type: "success" | "error" | "info" = "success"
@@ -97,62 +98,39 @@ const[eventId, setEventId]= useState("")
     const file = e.target.files?.[0] || null;
     if (file) {
       setFormData((prev) => ({ ...prev, posterImage: file }));
-      setImage(URL.createObjectURL(file)); // preview
+      setImage(URL.createObjectURL(file));
       showToast("Poster uploaded successfully!", "success");
     }
   };
 
-  useEffect(() => {
-    // Set default layout based on provided JSON structure
-    const defaultLayout: SeatLayout[] = [];
-    const rows = 0;
-    const columns = 0;
-    console.log(action);
-    for (let rowIndex = 0; rowIndex < rows; rowIndex++) {
-      const rowLetter = String.fromCharCode(65 + rowIndex); // A, B, C, D, E
-      for (let colIndex = 1; colIndex <= columns; colIndex++) {
-        // Create walk spaces in middle columns for rows B, C, D (column 5)
-        const isWalkSpace =
-          (rowLetter === "B" || rowLetter === "C" || rowLetter === "D") &&
-          colIndex === 5;
-        defaultLayout.push({
-          row: rowLetter,
-          number: colIndex,
-          categoryName: isWalkSpace ? "Walk Space" : "Regular",
-        });
-      }
+  // useEffect(() => {
+  //   getCategory();
+  // }, []);
+
+  const getCategory = async () => {
+    try {
+      const response = await axiosInstance.get("/organizer/events/categories");
+      const apiCategories = response.data.map((item: any) => ({
+        ...item,
+        color: "bg-[#e0e0e0] text-[#333333]",
+      }));
+      setTagCategory(apiCategories);
+    } catch (error: any) {
+      console.error(
+        "Error fetching categories:",
+        error.response?.data || error.message
+      );
     }
-
-    setFormData((prev) => ({
-      ...prev,
-      layout: defaultLayout,
-      categories: [
-        { name: "Regular", price: 1000 },
-        { name: "Walk Space", price: 0 },
-      ],
-    }));
-  }, []);
-
-  const tags = [
-    { name: "Yoga", color: "bg-[#e0e0e0] text-[#333333]" },
-    { name: "Romance", color: "bg-[#e0e0e0] text-[#333333]" },
-    { name: "Action", color: "bg-[#e0e0e0] text-[#333333]" },
-    { name: "Adventure", color: "bg-[#e0e0e0] text-[#333333]" },
-    { name: "Fitness", color: "bg-[#e0e0e0] text-[#333333]" },
-    { name: "Meditation", color: "bg-[#e0e0e0] text-[#333333]" },
-    { name: "Music", color: "bg-[#e0e0e0] text-[#333333]" },
-  ];
+  };
 
   const handleInputChange = (field: keyof EventFormData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleTagToggle = (tagName: string) => {
+  const handleTagToggle = (tagID: any) => {
     setFormData((prev) => ({
       ...prev,
-      selectedTags: prev.selectedTags.includes(tagName)
-        ? prev.selectedTags.filter((tag) => tag !== tagName)
-        : [...prev.selectedTags, tagName],
+      selectedTags: tagID,
     }));
   };
 
@@ -160,221 +138,225 @@ const[eventId, setEventId]= useState("")
     setFormData((prev) => ({
       ...prev,
       layout: layout.seats || layout.layout || [],
-      categories: layout.categories || prev.categories,
+      categories: (layout.categories || prev.categories).map((cat: any) => ({
+        name: cat.name,
+        price: Number(cat.price) || 0,
+        color: cat.color,
+      })),
       rows: layout.rows ? layout.rows.toString() : prev.rows,
       columns: layout.columns ? layout.columns.toString() : prev.columns,
     }));
   };
 
   useEffect(() => {
+    getCategory();
     if (action === "edit" && venueId) {
       const fetchEvent = async () => {
         try {
-         
           const res = await axiosInstance.get(`/organizer/events/${venueId}`);
           const data = res.data;
-          // console.log(res.data.imageUrls[0].split("/").pop())
-          setFormData((prev) => ({
-            ...prev,
-            eventName: data.title,
-            description: data.description,
-            venueId: data.venueId,
-            selectedDate: new Date(data.startDate),
-            selectedTime: new Date(data.startDate),
-            ticketType: data.mode,
-            seatingType: data.seatingType,
-            capacity: data.capacity?.toString() || "",
-            ticketPrice: data.ticketPrice?.toString() || "",
-            rows: data.rows?.toString() || "0",
-            columns: data.columns?.toString() || "0",
-            categories: data.categories || [],
-            layout: data.seats || [],
-            posterImage: data.imageUrls[0]
-              ? data.imageUrls[0].split("/").pop()
-              : "",
-          }));
+          
+        setFormData((prev) => {
+  const extractedCategories = data.seats
+    ? [
+        ...new Map(
+          data.seats.map((s : any) => [
+            s.categoryId,
+            {
+              name: s.categoryName,
+              price: s.price,
+              color: s.color, 
+            },
+          ])
+        ).values(),
+      ]
+    : [];
+
+  return {
+    ...prev,
+    eventName: data.title,
+    description: data.description,
+    venueId: data.venueId,
+    selectedDate: new Date(data.startDate),
+    selectedTime: new Date(data.startDate),
+    ticketType: data.mode,
+    seatingType: data.seatingType,
+    capacity: data.capacity?.toString() || "",
+    ticketPrice: data.ticketPrice?.toString() || "",
+    rows: data.rows?.toString() || "0",
+    columns: data.columns?.toString() || "0",
+    categories: extractedCategories, // <-- updated
+    layout: data.seats || [],
+    posterImage: data.imageUrls[0]
+      ? data.imageUrls[0].split("/").pop()
+      : "",
+  };
+});
+
+          const TagName = data.categoryName;
+          const matchedTag = tagCategory.find((tag) => tag.name === TagName);
+          console.log(tagCategory);
+          if (matchedTag) {
+            setFormData((prev) => ({
+              ...prev,
+              selectedTags: matchedTag.id,
+            }));
+          }
         } catch (err) {
-          // showToast("Failed to load event for editing", "error");
+          console.error("Error fetching event:", err);
         }
       };
       fetchEvent();
     }
   }, [action, venueId]);
 
+  const handleSubmitEvent = async () => {
+    setIsSubmitting(true);
 
-
-
-const handleSubmitEvent = async () => {
-  setIsSubmitting(true);
-
-  try {
-    if (!formData.eventName || !formData.selectedDate || !formData.selectedTime) {
-      showToast("Please fill all required fields", "error");
-      setIsSubmitting(false);
-      return;
-    }
-
-    // ✅ Combine date & time
-    const startDate = new Date(formData.selectedDate);
-    startDate.setHours(formData.selectedTime?.getHours() || 0);
-    startDate.setMinutes(formData.selectedTime?.getMinutes() || 0);
-
-    const endDate = new Date(startDate);
-    endDate.setHours(startDate.getHours() + 3);
-
-    // ✅ Convert tags array into string (comma separated)
-    const CategoryName = formData.selectedTags.length > 0 
-      ? formData.selectedTags.join(", ") 
-      : "Uncategorized";
-
-    // ✅ Build JSON payload
-    const requestPayload: any = {
-      title: formData.eventName,
-      description: formData.description || "No description provided",
-      venueId: formData.venueId,
-            categoryName:CategoryName ,
-      startDate: startDate.toISOString(),
-      endDate: endDate.toISOString(),
-      priceType: "FIXED",
-      mode: formData.ticketType,
-      seatingType: formData.seatingType,
-      organizerFeeAmount: 0,
-    };
-
-    if (formData.ticketType === "WITH_TICKETING") {
-      if (formData.seatingType === "GENERAL_ADMISSION") {
-        requestPayload.capacity = Number(formData.capacity) || 0;
-        requestPayload.ticketPrice = Number(formData.ticketPrice) || 0;
-      } else if (formData.seatingType === "SEAT_LAYOUT") {
-        requestPayload.rows = Number(formData.rows) || 0;
-        requestPayload.columns = Number(formData.columns) || 0;
-        requestPayload.categories = formData.categories?.map((c) => ({
-          name: c.name,
-          price: Number(c.price) || 0,
-        }));
-        requestPayload.seats = formData.layout?.map((s) => ({
-          row: s.row,
-          number: Number(s.number),
-          categoryName: s.categoryName,
-        }));
+    try {
+      if (
+        !formData.eventName ||
+        !formData.selectedDate ||
+        !formData.selectedTime
+      ) {
+        showToast("Please fill all required fields", "error");
+        setIsSubmitting(false);
+        return;
       }
-    }
 
-    // ✅ Always use multipart/form-data (for both add & edit)
-    const form = new FormData();
-    if (action === "edit") {
-      form.append("event", requestPayload);
-    } else {
-      form.append("request",requestPayload);
-    }
+      const startDate = new Date(formData.selectedDate);
+      startDate.setHours(formData.selectedTime?.getHours() || 0);
+      startDate.setMinutes(formData.selectedTime?.getMinutes() || 0);
 
-  
-    let response;
-    if (action === "edit" && venueId) {
-      response = await axiosInstance.put(`/organizer/events/${venueId}`, requestPayload, {
-        // headers: { "Content-Type": "multipart/form-data" },
-      });
-    } else if (action === "add") {
-      response = await axiosInstance.post(`/organizer/events`, requestPayload, {
-        // headers: { "Content-Type": "multipart/form-data" },
-      });
-    }
+      const endDate = new Date(startDate);
+      endDate.setHours(startDate.getHours() + 3);
 
-    if (response?.status === 200 || response?.status === 201) {
-      console.log(response.data)
-      setEventId(response.data.id)
+      const categoryId = formData.selectedTags;
+
+      const requestPayload: any = {
+        title: formData.eventName,
+        description: formData.description || "No description provided",
+        venueId: formData.venueId,
+        categoryId: categoryId,
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        priceType: "FIXED",
+        mode: formData.ticketType,
+        seatingType: formData.seatingType,
+        organizerFeeAmount: 0,
+      };
+
+      if (formData.ticketType === "WITH_TICKETING") {
+        if (formData.seatingType === "GENERAL_ADMISSION") {
+          requestPayload.capacity = Number(formData.capacity) || 0;
+          requestPayload.ticketPrice = Number(formData.ticketPrice) || 0;
+        } else if (formData.seatingType === "SEAT_LAYOUT") {
+          requestPayload.rows = Number(formData.rows) || 0;
+          requestPayload.columns = Number(formData.columns) || 0;
+          requestPayload.categories =
+            formData.categories?.map((c) => ({
+              name: c.name,
+              price: Number(c.price) || 0,
+              color: c.color,
+            })) || [];
+          requestPayload.seats =
+            formData.layout?.map((s) => ({
+              row: s.row,
+              number: Number(s.number),
+              categoryName: s.categoryName,
+            })) || [];
+        }
+      }
+
+      let response;
+      if (action === "edit" && venueId) {
+        response = await axiosInstance.put(
+          `/organizer/events/${venueId}`,
+          requestPayload
+        );
+      } else if (action === "add") {
+        response = await axiosInstance.post(
+          `/organizer/events`,
+          requestPayload
+        );
+      }
+
+      if (response?.status === 200 || response?.status === 201) {
+        setEventId(response.data.id);
+        showToast(
+          action === "edit"
+            ? "Event updated successfully!"
+            : "Event created successfully!",
+          "success"
+        );
+        setShowImagePopup(true);
+      }
+    } catch (error: any) {
+      console.error("Error saving event:", error);
       showToast(
-        action === "edit" ? "Event updated successfully!" : "Event created successfully!",
-        "success"
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to save event",
+        "error"
       );
-
-      setShowImagePopup(true)
-      // navigate(-1);
+    } finally {
+      setIsSubmitting(false);
     }
-  } catch (error: any) {
-    console.error("❌ Error saving event:", error);
-    showToast(
-      error.response?.data?.message || error.message || "Failed to save event",
-      "error"
-    );
-  } finally {
-    setIsSubmitting(false);
-  }
-};
-
-
+  };
 
   const handleGoToVenuePage = () => {
     navigate(-1);
   };
 
-  // if (currentStep === "preview") {
-  //   return (
-  //     <EventPreview
-  //       formData={formData}
-  //       image={image}
-  //       onBack={handleBackToCreate}
-  //       onSubmit={handleSubmitEvent}
-  //       isSubmitting={isSubmitting}
-  //     />
-  //   );
-  // }
-const handleSavePoster = async () => {
-  try {
-    if (!formData.posterImage ) {
-      showToast("Please select at least one image to upload.", "error");
-      return;
-    }
+  const handleSavePoster = async () => {
+    try {
+      if (!formData.posterImage) {
+        showToast("Please select at least one image to upload.", "error");
+        return;
+      }
 
-    const form = new FormData();
-  if (formData.posterImage instanceof File) {
-      form.append("files", formData.posterImage);
-    }
+      const form = new FormData();
+      if (formData.posterImage instanceof File) {
+        form.append("files", formData.posterImage);
+      }
 
-    // // ✅ Append all selected files to FormData
-    // formData.posterImages.forEach((file: File) => {
-    //   form.append("files", file); // 👈 backend expects "files" as the array field
-    // });
+      let response;
 
-    let response;
-
-    if (action === "edit" && eventId) {
-      response = await axiosInstance.post(`/events/${eventId}/images`, form, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-    } else if (action === "add") {
+      if (action === "edit" && eventId) {
         response = await axiosInstance.post(`/events/${eventId}/images`, form, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-    }
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+      } else if (action === "add") {
+        response = await axiosInstance.post(`/events/${eventId}/images`, form, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+      }
 
-    if (response?.status === 200 || response?.status === 201) {
+      if (response?.status === 200 || response?.status === 201) {
+        showToast(
+          action === "edit"
+            ? "Event images updated successfully!"
+            : "Event images uploaded successfully!",
+          "success"
+        );
+        navigate("/my-events");
+        setShowImagePopup(false);
+      }
+    } catch (error: any) {
+      console.error("Error uploading images:", error);
       showToast(
-        action === "edit"
-          ? "Event images updated successfully!"
-          : "Event images uploaded successfully!",
-        "success"
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to upload images",
+        "error"
       );
-navigate("/my-events")
-      setShowImagePopup(false);
-      // navigate(-1); // optional
     }
-  } catch (error: any) {
-    console.error("❌ Error uploading images:", error);
-    showToast(
-      error.response?.data?.message ||
-        error.message ||
-        "Failed to upload images",
-      "error"
-    );
-  }
-};
-
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-2 sm:p-4">
       <div className="">
-        <div className="flex justify-between items-start sm:items-center gap-3  mb-4">
+        <div className="flex justify-between items-start sm:items-center gap-3 mb-4">
           <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">
             {action === "edit" ? "UPDATE EVENT" : "CREATE EVENT"}
           </h1>
@@ -459,12 +441,12 @@ navigate("/my-events")
               Choose the relevant Tags
             </div>
             <div className="flex flex-wrap gap-2 sm:gap-3">
-              {tags.map((tag, index) => (
+              {tagCategory.map((tag, index) => (
                 <button
                   key={index}
-                  onClick={() => handleTagToggle(tag.name)}
+                  onClick={() => handleTagToggle(tag.id)}
                   className={`px-3 py-1 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 hover:scale-105 ${
-                    formData.selectedTags.includes(tag.name)
+                    formData.selectedTags === tag.id
                       ? "bg-[#5d33fb] text-white"
                       : tag.color
                   }`}
@@ -695,15 +677,18 @@ navigate("/my-events")
                         }
                       : undefined
                   }
+                  onCategoriesChange={(updatedCategories) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      categories: updatedCategories,
+                    }))
+                  }
                 />
               </div>
             )}
 
-     
-
           {/* Action Buttons */}
           <div className="pt-4 sm:pt-6 flex sm:flex-row gap-3 sm:gap-4">
-        
             <Button
               onClick={handleSubmitEvent}
               disabled={isSubmitting}
@@ -721,92 +706,105 @@ navigate("/my-events")
         </div>
       </div>
 
-{showImagePopup && ( 
+      {showImagePopup && (
+        <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg transform transition-all duration-300 animate-in zoom-in-95">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+              <h2 className="text-lg font-semibold text-slate-800">
+                Upload Event Poster
+              </h2>
+              <button
+                onClick={() => {
+                  setShowImagePopup(false);
+                  navigate("/my-events");
+                }}
+                className="text-slate-500 hover:text-slate-800 transition-colors duration-150"
+              >
+                ✕
+              </button>
+            </div>
 
-  <div className="fixed inset-0  backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg transform transition-all duration-300 animate-in zoom-in-95">
-      
-      {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-        <h2 className="text-lg font-semibold text-slate-800">Upload Event Poster</h2>
-        <button
-          onClick={() => setShowImagePopup(false)}
-          className="text-slate-500 hover:text-slate-800 transition-colors duration-150"
-        >
-          ✕
-        </button>
-      </div>
+            {/* Body */}
+            <div className="px-6 py-5 overflow-y-auto max-h-[80vh]">
+              <Label className="text-sm font-semibold text-slate-700 mb-3 block">
+                Choose Poster
+              </Label>
 
-      {/* Body */}
-      <div className="px-6 py-5 overflow-y-auto max-h-[80vh]">
-        <Label className="text-sm font-semibold text-slate-700 mb-3 block">
-          Choose Poster
-        </Label>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+                <Input
+                  placeholder="Select your Poster"
+                  value={formData.posterImage ? formData.posterImage.name : ""}
+                  readOnly
+                  className="flex-1 h-10 sm:h-12 text-base sm:text-lg border-2 border-slate-200 focus:border-[#5d33fb] rounded-xl transition-all duration-200"
+                />
 
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
-          <Input
-            placeholder="Select your Poster"
-            value={formData.posterImage ? formData.posterImage.name : ""}
-            readOnly
-            className="flex-1 h-10 sm:h-12 text-base sm:text-lg border-2 border-slate-200 focus:border-[#5d33fb] rounded-xl transition-all duration-200"
-          />
+                <div className="relative w-full sm:w-auto">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  />
+                  <Button className="bg-[#5d33fb] hover:bg-[#4c2bd9] text-white px-4 py-2 h-10 sm:h-12 w-full sm:w-auto">
+                    Choose File
+                  </Button>
+                </div>
+              </div>
 
-          <div className="relative w-full sm:w-auto">
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleFileChange}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-            />
-            <Button className="bg-[#5d33fb] hover:bg-[#4c2bd9] text-white px-4 py-2 h-10 sm:h-12 w-full sm:w-auto">
-              Choose File
-            </Button>
+              {/* Info Section */}
+              <div className="text-xs sm:text-sm text-slate-500 mt-4 space-y-1">
+                <div>
+                  1. <b>Correct Dimensions:</b> Use 1140×300 or 180×250 sizes.
+                </div>
+                <div>
+                  2. <b>File Format:</b> Use PNG or JPEG.
+                </div>
+                <div>
+                  3. <b>File Size:</b> Optimize for fast upload.
+                </div>
+                <div>
+                  4. <b>Resolution:</b> Minimum 300 DPI for clarity.
+                </div>
+              </div>
+
+              {/* Preview */}
+              {formData.posterImage && (
+                <div className="mt-4">
+                  <p className="text-sm text-slate-600 mb-2 font-medium">
+                    Preview:
+                  </p>
+                  <img
+                    src={image || "/placeholder.svg"}
+                    alt="Poster Preview"
+                    className="w-full h-48 object-cover rounded-xl border border-slate-200 shadow-sm"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="flex justify-end items-center gap-3 px-6 py-4 border-t border-slate-200">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowImagePopup(false);
+                  navigate("/my-events");
+                }}
+                className="text-slate-700 border-slate-300 hover:bg-slate-100 rounded-xl"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSavePoster}
+                className="bg-[#5d33fb] hover:bg-[#4c2bd9] text-white rounded-xl"
+              >
+                Save Poster
+              </Button>
+            </div>
           </div>
         </div>
-
-        {/* Info Section */}
-        <div className="text-xs sm:text-sm text-slate-500 mt-4 space-y-1">
-          <div>1. <b>Correct Dimensions:</b> Use 1140×300 or 180×250 sizes.</div>
-          <div>2. <b>File Format:</b> Use PNG or JPEG.</div>
-          <div>3. <b>File Size:</b> Optimize for fast upload.</div>
-          <div>4. <b>Resolution:</b> Minimum 300 DPI for clarity.</div>
-        </div>
-
-        {/* Preview */}
-        {formData.posterImage && (
-          <div className="mt-4">
-            <p className="text-sm text-slate-600 mb-2 font-medium">Preview:</p>
-            <img
-              src={image}
-              alt="Poster Preview"
-              className="w-full h-48 object-cover rounded-xl border border-slate-200 shadow-sm"
-            />
-          </div>
-        )}
-      </div>
-
-      {/* Footer */}
-      <div className="flex justify-end items-center gap-3 px-6 py-4 border-t border-slate-200">
-        <Button
-          variant="outline"
-          onClick={() => setShowImagePopup(false)}
-          className="text-slate-700 border-slate-300 hover:bg-slate-100 rounded-xl"
-        >
-          Cancel
-        </Button>
-        <Button
-          onClick={handleSavePoster}
-          className="bg-[#5d33fb] hover:bg-[#4c2bd9] text-white rounded-xl"
-        >
-          Save Poster
-        </Button>
-      </div>
-    </div>
-  </div>
-)}
-
-  
-
+      )}
 
       <Toast
         isOpen={toast.isOpen}

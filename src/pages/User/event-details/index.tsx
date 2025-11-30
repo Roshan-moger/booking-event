@@ -1,29 +1,63 @@
-import { useMemo, useState } from "react"
+"use client"
+
+import { useEffect, useMemo, useState } from "react"
 import { ArrowLeft, Calendar, MapPin, Share2, Star, Tag, Users } from "lucide-react"
-import type { Event } from "../event-dashboard/types"
+import axiosInstance from "../../../api/axiosInstance"
 import { Button } from "../../../components/UI/button"
 import { Badge } from "../../../components/UI/badge"
 import { Separator } from "../../../components/UI/separator"
+import { useNavigate, useParams } from "react-router-dom"
 
-
-interface EventDetailsProps {
-  event: Event
-  onBack: () => void
+interface Seat {
+  status: "AVAILABLE" | "BOOKED" | "BLOCKED"
 }
 
-export function EventDetails({ event, onBack }: EventDetailsProps) {
+interface Event {
+  id: number
+  title: string
+  description: string
+  categoryName: string
+  startDate: string
+  endDate: string
+  venueName: string
+  ticketPrice: number
+  ratings: number
+  imageUrls: string[]
+  totalSeats: number
+  seats?: Seat[]
+  rows?: number
+  columns?: number
+  seatingType?: string
+  capacity?: number
+  mode: string
+  hasActiveAd?: boolean
+}
+
+export default function EventDetailsPage() {
+  const navigate = useNavigate()
+  const { eventId } = useParams()
+
+  const [event, setEvent] = useState<Event | null>(null)
   const [activeImage, setActiveImage] = useState(0)
+  const [loading, setLoading] = useState(true)
 
-  const images = event.imageUrls?.length ? event.imageUrls : ["/event-hero.jpg"]
-  const availableSeats = event.seats?.filter((s) => s.status === "AVAILABLE").length ?? 0
+  useEffect(() => {
+    const fetchEvent = async () => {
+      try {
+        const res = await axiosInstance.get(`/events/${eventId}`)
+        setEvent(res.data)
+      } catch (err) {
+        console.error("Failed to fetch event", err)
+      } finally {
+        setLoading(false)
+      }
+    }
 
-  const totalHours = useMemo(() => {
-    const diff = new Date(event.endDate).getTime() - new Date(event.startDate).getTime()
-    return Math.max(1, Math.ceil(diff / (1000 * 60 * 60)))
-  }, [event.endDate, event.startDate])
+    if (eventId) fetchEvent()
+  }, [eventId])
 
   const formatDate = (dateString: string) =>
-    new Date(dateString).toLocaleDateString("en-US", {
+    new Date(dateString).toLocaleDateString("en-IN", {
       weekday: "long",
       year: "numeric",
       month: "long",
@@ -31,27 +65,65 @@ export function EventDetails({ event, onBack }: EventDetailsProps) {
     })
 
   const formatTime = (dateString: string) =>
-    new Date(dateString).toLocaleTimeString("en-US", {
+    new Date(dateString).toLocaleTimeString("en-IN", {
       hour: "numeric",
       minute: "2-digit",
       hour12: true,
     })
 
+  const totalHours = useMemo(() => {
+    if (!event) return 0
+    const diff = new Date(event.endDate).getTime() - new Date(event.startDate).getTime()
+    return Math.max(1, Math.ceil(diff / (1000 * 60 * 60)))
+  }, [event])
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-background via-background to-blue-50/20">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading event details...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!event) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-background via-background to-blue-50/20">
+        <p className="text-muted-foreground mb-4">Event not found.</p>
+        <Button
+          className="bg-gradient-to-r from-blue-500 to-orange-500 hover:from-blue-600 hover:to-orange-600"
+          onClick={() => navigate("/dashboard")}
+        >
+          Go Back
+        </Button>
+      </div>
+    )
+  }
+
+  const images = event.imageUrls?.length ? event.imageUrls : ["/event-hero.jpg"]
+  const availableSeats = event.seats?.filter((s) => s.status === "AVAILABLE").length ?? 0
+
   const handleBookNow = () => {
-    alert("Redirecting to booking...")
-    console.log("Booking event:", event.id)
+    navigate(`/dashboard/ticketbook/${event.id}`)
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-blue-50/10">
       {/* Header */}
-      <header className="bg-card/60 border-b border-border">
-        <div className=" px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <Button variant="ghost" size="sm" onClick={onBack}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Events
+      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-blue-100/20 shadow-sm">
+        <div className="px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+          <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="hover:bg-blue-50">
+            <ArrowLeft className="h-4 w-4 mr-2 text-blue-600" />
+            <span className="text-blue-600 font-medium">Back</span>
           </Button>
-          <Button variant="outline" size="sm">
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-blue-200 hover:bg-blue-50 hover:text-blue-600 bg-transparent"
+          >
             <Share2 className="h-4 w-4 mr-2" />
             Share
           </Button>
@@ -59,18 +131,17 @@ export function EventDetails({ event, onBack }: EventDetailsProps) {
       </header>
 
       {/* Body */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main */}
           <div className="lg:col-span-2 space-y-8">
             {/* Gallery */}
-            <div className="space-y-3">
-              <div className="aspect-video rounded-xl overflow-hidden bg-muted">
+            <div className="space-y-4">
+              <div className="aspect-video rounded-2xl overflow-hidden bg-gradient-to-br from-blue-100 to-orange-50 shadow-lg">
                 <img
-                
                   src={`https://spot.app.codevicesolution.in${images[activeImage]}` || "/placeholder.svg"}
                   alt={`${event.title} image ${activeImage + 1}`}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                 />
               </div>
               {images.length > 1 && (
@@ -79,13 +150,15 @@ export function EventDetails({ event, onBack }: EventDetailsProps) {
                     <button
                       key={idx}
                       onClick={() => setActiveImage(idx)}
-                      className={`relative aspect-video overflow-hidden rounded-md border ${
-                        activeImage === idx ? "border-primary" : "border-border"
+                      className={`relative aspect-video overflow-hidden rounded-lg border-2 transition-all ${
+                        activeImage === idx
+                          ? "border-blue-500 shadow-md scale-105"
+                          : "border-blue-100 hover:border-blue-300"
                       }`}
                       aria-label={`View image ${idx + 1}`}
                     >
                       <img
-                  src={`https://spot.app.codevicesolution.in${src}` || "/placeholder.svg"}
+                        src={`https://spot.app.codevicesolution.in${src}` || "/placeholder.svg"}
                         alt={`Thumbnail ${idx + 1}`}
                         className="w-full h-full object-cover"
                       />
@@ -95,179 +168,155 @@ export function EventDetails({ event, onBack }: EventDetailsProps) {
               )}
             </div>
 
-            {/* Header + meta */}
+            {/* Header + Meta */}
             <div className="space-y-6">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Badge variant="secondary">{event.categoryName}</Badge>
-                    {/* <Badge variant={event.status === "ACTIVE" ? "default" : "secondary"}>{event.status}</Badge> */}
-                    {event.ratings > 0 && (
-                      <span className="inline-flex items-center gap-1 text-sm">
-                        <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
-                        <span className="font-medium">{event.ratings}</span>
-                      </span>
-                    )}
-                  </div>
-                  <h1 className="text-3xl font-bold text-foreground text-balance">{event.title}</h1>
+              <div>
+                <div className="flex items-center gap-3 mb-3 flex-wrap">
+                  <Badge className="bg-gradient-to-r from-blue-100 to-orange-100 text-blue-700 border-blue-200 border">
+                    {event.categoryName}
+                  </Badge>
+                  {event.ratings > 0 && (
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200">
+                      <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
+                      <span className="font-semibold text-amber-700">{event.ratings}</span>
+                    </div>
+                  )}
                 </div>
+                <h1 className="text-4xl lg:text-5xl font-bold bg-gradient-to-r from-slate-900 to-blue-600 bg-clip-text text-transparent">
+                  {event.title}
+                </h1>
               </div>
 
-              {/* Key facts */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-6 rounded-xl border border-border bg-card">
-                <div className="flex items-center gap-3">
-                  <Calendar className="h-5 w-5 text-primary" />
+              {/* Key Facts */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-6 rounded-2xl bg-gradient-to-br from-white to-blue-50 border border-blue-100 shadow-md">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-gradient-to-br from-blue-100 to-blue-50 rounded-lg">
+                    <Calendar className="h-5 w-5 text-blue-600" />
+                  </div>
                   <div>
-                    <p className="font-medium text-foreground">{formatDate(event.startDate)}</p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="font-semibold text-slate-900">{formatDate(event.startDate)}</p>
+                    <p className="text-sm text-slate-600">
                       {formatTime(event.startDate)} – {formatTime(event.endDate)}
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <MapPin className="h-5 w-5 text-primary" />
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-gradient-to-br from-orange-100 to-orange-50 rounded-lg">
+                    <MapPin className="h-5 w-5 text-orange-600" />
+                  </div>
                   <div>
-                    <p className="font-medium text-foreground">{event.venueName}</p>
-                    {/* {event.venueId && <p className="text-sm text-muted-foreground">Venue ID: {event.venueId}</p>} */}
+                    <p className="font-semibold text-slate-900">{event.venueName}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <Users className="h-5 w-5 text-primary" />
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-gradient-to-br from-emerald-100 to-emerald-50 rounded-lg">
+                    <Users className="h-5 w-5 text-emerald-600" />
+                  </div>
                   <div>
-                    <p className="font-medium text-foreground">{availableSeats} Available</p>
-                    <p className="text-sm text-muted-foreground">of {event.totalSeats} total seats</p>
+                    <p className="font-semibold text-slate-900">{availableSeats} Available</p>
+                    <p className="text-sm text-slate-600">of {event.totalSeats} total seats</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <Tag className="h-5 w-5 text-primary" />
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-gradient-to-br from-blue-100 to-blue-50 rounded-lg">
+                    <Tag className="h-5 w-5 text-blue-600" />
+                  </div>
                   <div>
-                    <p className="font-medium text-foreground">${event.ticketPrice}</p>
-                    <p className="text-sm text-muted-foreground">Starting price</p>
+                    <p className="font-semibold text-slate-900">₹{event.ticketPrice}</p>
+                    <p className="text-sm text-slate-600">Starting price</p>
                   </div>
                 </div>
               </div>
             </div>
 
-            <Separator />
-
-            {/* Highlights */}
-            <div className="space-y-3">
-              <h2 className="text-xl font-semibold text-foreground">Why you’ll love it</h2>
-              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                <li className="rounded-lg border border-border bg-card px-4 py-3">
-                  Premium acoustics and immersive atmosphere
-                </li>
-                <li className="rounded-lg border border-border bg-card px-4 py-3">Great views from every section</li>
-                <li className="rounded-lg border border-border bg-card px-4 py-3">Fast, secure mobile entry</li>
-                <li className="rounded-lg border border-border bg-card px-4 py-3">Food and drinks available on-site</li>
-              </ul>
-            </div>
-
-            <Separator />
+            <Separator className="bg-gradient-to-r from-transparent via-blue-200 to-transparent" />
 
             {/* Description */}
-            <div>
-              <h2 className="text-xl font-semibold text-foreground mb-3">About this event</h2>
-              <p className="text-muted-foreground leading-relaxed">{event.description}</p>
+            <div className="bg-gradient-to-br from-white to-blue-50 p-6 rounded-2xl border border-blue-100">
+              <h2 className="text-2xl font-bold text-slate-900 mb-3">About this event</h2>
+              <p className="text-slate-700 leading-relaxed text-lg">{event.description}</p>
             </div>
 
-            <Separator />
+            <Separator className="bg-gradient-to-r from-transparent via-blue-200 to-transparent" />
 
-       {/* Seating info */}
-{event.rows && event.columns && event.seatingType ? (
-  <div>
-    <h2 className="text-xl font-semibold text-foreground mb-4">Seating information</h2>
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div className="p-4 rounded-xl border border-border bg-card">
-        <h3 className="font-medium text-foreground mb-2">Layout</h3>
-        <p className="text-sm text-muted-foreground">
-          {event.rows} rows × {event.columns} columns
-        </p>
-        <p className="text-sm text-muted-foreground">{event.seatingType?.replace("_", " ")}</p>
-      </div>
-      <div className="p-4 rounded-xl border border-border bg-card">
-        <h3 className="font-medium text-foreground mb-2">Capacity</h3>
-        <p className="text-sm text-muted-foreground">
-          {event.capacity ? `${event.capacity} maximum capacity` : "Not specified"}
-        </p>
-        <p className="text-sm text-muted-foreground">
-          {event.totalSeats ? `${event.totalSeats} total seats` : "Not specified"}
-        </p>
-      </div>
-      <div className="p-4 rounded-xl border border-border bg-card">
-        <h3 className="font-medium text-foreground mb-2">Availability</h3>
-        <p className="text-sm text-muted-foreground">{availableSeats} seats available</p>
-        <p className="text-sm text-muted-foreground">
-          {event.seats?.filter((s) => s.status === "BOOKED").length || 0} booked
-        </p>
-      </div>
-    </div>
-  </div>
-) : (
-  <div>
-    <h2 className="text-xl font-semibold text-foreground mb-4">Seating information</h2>
-    <p className="text-sm text-muted-foreground">Seating layout not available for this event.</p>
-  </div>
-)}
-
+            {/* Seating Info */}
+            {event.rows && event.columns && event.seatingType ? (
+              <div className="bg-gradient-to-br from-white to-purple-50 p-6 rounded-2xl border border-purple-100">
+                <h2 className="text-2xl font-bold text-slate-900 mb-4">Seating information</h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="p-4 rounded-xl bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200">
+                    <h3 className="font-semibold text-purple-900 mb-2">Layout</h3>
+                    <p className="text-sm text-purple-700">
+                      {event.rows} rows × {event.columns} columns
+                    </p>
+                    <p className="text-sm text-purple-700">{event.seatingType.replace("_", " ")}</p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-gradient-to-br from-indigo-50 to-indigo-100 border border-indigo-200">
+                    <h3 className="font-semibold text-indigo-900 mb-2">Capacity</h3>
+                    <p className="text-sm text-indigo-700">
+                      {event.capacity ? `${event.capacity} maximum capacity` : "Not specified"}
+                    </p>
+                    <p className="text-sm text-indigo-700">
+                      {event.totalSeats ? `${event.totalSeats} total seats` : "Not specified"}
+                    </p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-gradient-to-br from-cyan-50 to-cyan-100 border border-cyan-200">
+                    <h3 className="font-semibold text-cyan-900 mb-2">Availability</h3>
+                    <p className="text-sm text-cyan-700">{availableSeats} seats available</p>
+                    <p className="text-sm text-cyan-700">
+                      {event.seats?.filter((s) => s.status === "BOOKED").length || 0} booked
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : null}
           </div>
 
           {/* Sidebar */}
           <aside className="lg:col-span-1">
             <div className="sticky top-24 space-y-6">
-              {/* Pricing */}
-              <div className="p-6 rounded-xl border border-border bg-card">
+              <div className="p-6 rounded-2xl bg-gradient-to-br from-white via-blue-50 to-orange-50 border border-blue-100 shadow-lg">
                 <div className="text-center mb-6">
-                  <div className="text-3xl font-bold text-foreground mb-1">${event.ticketPrice}</div>
-                  <p className="text-sm text-muted-foreground">per ticket</p>
-                </div>
-
-                <div className="space-y-4 mb-6">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Organizer fee</span>
-                    <span className="text-foreground">${event.organizerFeeAmount}</span>
+                  <div className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-orange-600 bg-clip-text text-transparent mb-1">
+                    ₹{event.ticketPrice}
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Fee status</span>
-                    <Badge variant={event.organizerFeeStatus === "PAID" ? "default" : "secondary"}>
-                      {event.organizerFeeStatus}
-                    </Badge>
-                  </div>
-                  <Separator />
-                  <div className="flex justify-between font-medium">
-                    <span>Total</span>
-                    <span>${event.ticketPrice + event.organizerFeeAmount}</span>
-                  </div>
+                  <p className="text-sm text-slate-600 font-medium">Ticket Amount</p>
                 </div>
 
                 <Button
-                  className="w-full h-12 text-base font-medium"
+                  className="w-full h-12 text-base font-semibold bg-gradient-to-r from-blue-500 to-orange-500 hover:from-blue-600 hover:to-orange-600 text-white shadow-md"
                   disabled={availableSeats === 0}
                   onClick={handleBookNow}
                 >
                   {availableSeats === 0 ? "Sold Out" : "Book Now"}
                 </Button>
 
-                <p className="text-xs text-muted-foreground text-center mt-3">
-                  Secure checkout · Free cancellation up to 24h before
+                <p className="text-xs text-slate-600 text-center mt-4 font-medium">
+                  ✓ Secure checkout · ✓ Free cancellation up to 24h
                 </p>
               </div>
 
-              {/* Quick facts */}
-              <div className="p-6 rounded-xl border border-border bg-card">
-                <h3 className="font-semibold text-foreground mb-4">Event details</h3>
+              {/* Quick Facts */}
+              <div className="p-6 rounded-2xl bg-gradient-to-br from-white to-slate-50 border border-slate-200 shadow-sm">
+                <h3 className="font-bold text-slate-900 mb-4 text-lg">Event details</h3>
                 <div className="space-y-3 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Mode</span>
-                    <span className="text-foreground">{event.mode.replace("_", " ")}</span>
+                  <div className="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
+                    <span className="text-slate-600 font-medium">Mode</span>
+                    <span className="text-slate-900 font-semibold">{event.mode.replace("_", " ")}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Duration</span>
-                    <span className="text-foreground">{totalHours} hours</span>
+                  <div className="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
+                    <span className="text-slate-600 font-medium">Duration</span>
+                    <span className="text-slate-900 font-semibold">{totalHours} hours</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Active Ad</span>
-                    <Badge variant={event.hasActiveAd ? "default" : "secondary"}>
+                  <div className="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
+                    <span className="text-slate-600 font-medium">Active Ad</span>
+                    <Badge
+                      className={
+                        event.hasActiveAd
+                          ? "bg-gradient-to-r from-emerald-100 to-emerald-50 text-emerald-700 border-emerald-200 border"
+                          : "bg-slate-200 text-slate-700"
+                      }
+                    >
                       {event.hasActiveAd ? "Yes" : "No"}
                     </Badge>
                   </div>

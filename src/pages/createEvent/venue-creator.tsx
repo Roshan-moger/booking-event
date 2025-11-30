@@ -99,7 +99,6 @@ const VenueCreatorPage = () => {
           const res = await axiosInstance.get(`/organizer/venues/getbyid/${venueId}`)
           if (res.status === 200) {
             setFormData(res.data)
-                  console.log(res.data)
 
           }
         } catch (error: any) {
@@ -393,7 +392,7 @@ const VenueCreatorPage = () => {
               <ArrowLeft className="h-4 w-4 mr-1 md:mr-2" />
               <span className="hidden sm:inline">Go to Venues</span>
             </Button>
-            <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
+            <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
               <div className="bg-slate-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
                 Go to Venue Page
                 <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-slate-800"></div>

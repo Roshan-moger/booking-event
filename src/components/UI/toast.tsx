@@ -100,7 +100,7 @@ const Toast: React.FC<ToastProps> = ({
     <div
       aria-live="assertive"
       aria-atomic="true"
-      className={`fixed inset-0 z-[1000] pointer-events-none flex p-4 sm:p-6 ${positionClasses}`}
+      className={`fixed inset-0 z-[10000] pointer-events-none flex p-4 sm:p-6 ${positionClasses}`}
     >
       <div
         role="alert"

@@ -1,42 +1,58 @@
-import React, { Suspense, lazy } from "react"
-import { Routes, Route } from "react-router-dom"
-import Layout from "./components/DashboardHelpers/Layout"
-import { LoadingSpinner, SkeletonLoader } from "./components/LoadingSpinner"
-import ProtectedRoute from "./helpers"
+import React, { Suspense, lazy } from "react";
+import { Routes, Route } from "react-router-dom";
+import Layout from "./components/DashboardHelpers/Layout";
+import { LoadingSpinner, SkeletonLoader } from "./components/LoadingSpinner";
+import ProtectedRoute from "./helpers";
+import { useSelector } from "react-redux";
+import type { InitialReduxStateProps } from "./redux/redux.props";
 
 // Lazy load pages
-const Home = lazy(() => import("./pages/Home"))
-const HomePage = lazy(() => import("./pages/User/HomePage"))
-const CreateEvent = lazy(() => import("./pages/createEvent"))
-const VenueSelectionPage = lazy(() => import("./pages/venue-selection"))
-const VenueCreatorPage = lazy(() => import("./pages/createEvent/venue-creator"))
-const MyTickets = lazy(() => import("./pages/my-tivkets"))
-const MyEvents = lazy(() => import("./pages/my-events"))
-const EventCards = lazy(() => import("./pages/event-card"))
-const PaymentPage = lazy(() => import("./pages/payment"))
-const Commen = lazy(() => import("./components/DashboardHelpers/Commen"))
-const NotFound = lazy(() => import("./components/DashboardHelpers/NotFound"))
-const EventManagementTable = lazy(() => import("./pages/Admin/events"))
-const VenueManagementTable = lazy(() => import("./pages/Admin/venues"))
-const UserManagementTable = lazy(() => import("./pages/Admin/organizers"))
-const ContactUsPage = lazy(() => import("./pages/contactUs"))
-const SupportPage = lazy(() => import("./pages/support"))
+const Home = lazy(() => import("./pages/Home"));
+const HomePage = lazy(() => import("./pages/User/HomePage"));
+const CreateEvent = lazy(() => import("./pages/createEvent"));
+const VenueSelectionPage = lazy(() => import("./pages/venue-selection"));
+const VenueCreatorPage = lazy(
+  () => import("./pages/createEvent/venue-creator")
+);
+const MyTickets = lazy(() => import("./pages/my-tivkets"));
+const MyEvents = lazy(() => import("./pages/my-events"));
+const EventCards = lazy(() => import("./pages/event-card"));
+const PaymentPage = lazy(() => import("./pages/payment"));
+const Commen = lazy(() => import("./components/DashboardHelpers/Commen"));
+const NotFound = lazy(() => import("./components/DashboardHelpers/NotFound"));
+const EventManagementTable = lazy(() => import("./pages/Admin/events"));
+const VenueManagementTable = lazy(() => import("./pages/Admin/venues"));
+const CategoryManager = lazy(() => import("./pages/Admin/categoryManagement"));
+const UserManagementTable = lazy(() => import("./pages/Admin/organizers"));
+const ContactUsPage = lazy(() => import("./pages/contactUs"));
+const SupportPage = lazy(() => import("./pages/support"));
+const SeatBookingPage = lazy(() => import("./pages/User/ticket-book"));
+const ConfirmationPage = lazy(() => import("./pages/User/confirm-ticket"));
+const EventDetails = lazy(() => import("./pages/User/event-details"));
+const BankDetailsPage = lazy(() => import("./pages/User/BankDetails"));
+const Watchlist = lazy(() => import("./pages/watchList"));
+const Scanner = lazy(() => import("./pages/scanner"));
+const ScanResult = lazy(() => import("./pages/scanner/scan-result"));
+
 
 class LazyLoadErrorBoundary extends React.Component<
   { children: React.ReactNode; fallback?: React.ReactNode },
   { hasError: boolean }
 > {
-  constructor(props: { children: React.ReactNode; fallback?: React.ReactNode }) {
-    super(props)
-    this.state = { hasError: false }
+  constructor(props: {
+    children: React.ReactNode;
+    fallback?: React.ReactNode;
+  }) {
+    super(props);
+    this.state = { hasError: false };
   }
 
   static getDerivedStateFromError(): { hasError: boolean } {
-    return { hasError: true }
+    return { hasError: true };
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error("Lazy loading error:", error, errorInfo)
+    console.error("Lazy loading error:", error, errorInfo);
   }
 
   render() {
@@ -58,23 +74,48 @@ class LazyLoadErrorBoundary extends React.Component<
             </div>
           </div>
         )
-      )
+      );
     }
 
-    return this.props.children
+    return this.props.children;
   }
 }
 
 const Router: React.FC = () => {
+
+    const role = useSelector(
+      (state: InitialReduxStateProps) => state.tokenInfo.roles
+    );
+
+
+
   return (
     <LazyLoadErrorBoundary>
       <Suspense fallback={<LoadingSpinner />}>
         <Routes>
           {/* Public Routes */}
-          <Route path="/" element={<Home />} />
+          <Route
+            path="/"
+            element={
+                <Home />
+            }
+          />
+ {/* <Route path="/t/:code" element={<ScanResult />} />  */}
           <Route path="/common" element={<Commen />} />
           <Route path="/404" element={<NotFound />} />
           <Route path="/*" element={<NotFound />} />
+         {role.includes("ORGANIZER") ?   <Route
+            path="/t/:code"
+            element={
+              <ProtectedRoute allowedRoles={["CUSTOMER", "ORGANIZER"]}>
+                <Layout>
+                  <Suspense fallback={<SkeletonLoader />}>
+                    <ScanResult />
+                  </Suspense>
+                </Layout>
+              </ProtectedRoute>
+            }
+          />   : <Route path="/t/:code" element={<ScanResult />} />    } 
 
           {/* Customer / Organizer Routes */}
           <Route
@@ -161,7 +202,7 @@ const Router: React.FC = () => {
               </ProtectedRoute>
             }
           />
-                    <Route
+          <Route
             path="my-events/event/:action/:venueId"
             element={
               <ProtectedRoute allowedRoles={["CUSTOMER", "ORGANIZER"]}>
@@ -174,7 +215,7 @@ const Router: React.FC = () => {
             }
           />
           <Route
-            path="/payment/event/:eventId"
+            path="my-events/payment/event/:eventId"
             element={
               <ProtectedRoute allowedRoles={["CUSTOMER", "ORGANIZER"]}>
                 <Layout>
@@ -198,6 +239,82 @@ const Router: React.FC = () => {
             }
           />
 
+          <Route
+            path="/dashboard/ticketbook/:eventId"
+            element={
+              <ProtectedRoute allowedRoles={["CUSTOMER", "ORGANIZER"]}>
+                <Layout>
+                  <Suspense fallback={<SkeletonLoader />}>
+                    <SeatBookingPage />
+                  </Suspense>
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/dashboard/event-details/:eventId"
+            element={
+              <ProtectedRoute allowedRoles={["CUSTOMER", "ORGANIZER"]}>
+                <Layout>
+                  <Suspense fallback={<SkeletonLoader />}>
+                    <EventDetails />
+                  </Suspense>
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/dashboard/ticketbook/confirmbook"
+            element={
+              <ProtectedRoute allowedRoles={["CUSTOMER", "ORGANIZER"]}>
+                <Layout>
+                  <Suspense fallback={<SkeletonLoader />}>
+                    <ConfirmationPage />
+                  </Suspense>
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/user/bankdetails"
+            element={
+              <ProtectedRoute allowedRoles={["CUSTOMER", "ORGANIZER"]}>
+                <Layout>
+                  <Suspense fallback={<SkeletonLoader />}>
+                    <BankDetailsPage />
+                  </Suspense>
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+      <Route
+            path="/scanner"
+            element={
+              <ProtectedRoute allowedRoles={["CUSTOMER", "ORGANIZER"]}>
+                <Layout>
+                  <Suspense fallback={<SkeletonLoader />}>
+                    <Scanner />
+                  </Suspense>
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+              <Route
+            path="/watchlist"
+            element={
+              <ProtectedRoute allowedRoles={["CUSTOMER", "ORGANIZER"]}>
+                <Layout>
+                  <Suspense fallback={<SkeletonLoader />}>
+                    <Watchlist />
+                  </Suspense>
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
           {/* Admin Routes */}
           <Route
             path="/manage/events"
@@ -235,7 +352,18 @@ const Router: React.FC = () => {
               </ProtectedRoute>
             }
           />
-
+          <Route
+            path="/manage/categories"
+            element={
+              <ProtectedRoute allowedRoles={["ADMIN"]}>
+                <Layout>
+                  <Suspense fallback={<SkeletonLoader />}>
+                    <CategoryManager />
+                  </Suspense>
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
           {/* Common for all logged-in users */}
           <Route
             path="/contact"
@@ -276,7 +404,7 @@ const Router: React.FC = () => {
         </Routes>
       </Suspense>
     </LazyLoadErrorBoundary>
-  )
-}
+  );
+};
 
-export default Router
+export default Router;

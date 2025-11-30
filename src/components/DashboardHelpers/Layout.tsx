@@ -84,15 +84,23 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   }, [token, tokenExpiry, dispatch, navigate]);
 
   return (
-    <div className="flex h-screen bg-gray-100">
-      {/* Sidebar */}
-      <Sidebar />
+   <div className="flex flex-col min-h-screen bg-gray-100">
+      {/* Header */}
+      <Header />
 
-      {/* Main Content */}
-      <div className="flex flex-col flex-1 md:ml-64">
-        <Header />
-        <main className="flex-1 overflow-y-auto">{children}</main>
+      {/* Content Section */}
+      <div className="flex flex-1">
+        {/* Sidebar */}
+        <Sidebar />
+
+        {/* Main Content */}
+        <main className="flex-1 overflow-y-auto md:pl-64">
+          {children}
+        </main>
       </div>
+
+      {/* Footer */}
+      {/* <Footer /> */}
     </div>
   );
 };

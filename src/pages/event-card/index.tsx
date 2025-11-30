@@ -48,7 +48,7 @@ interface Event {
   seats: Seat[];
   mode: "WITH_TICKETING" | "WITHOUT_TICKETING";
   organizerFeeAmount: number;
-  organizerFeeStatus: "PAID" | "DUE";
+  organizerFeeStatus: "PAID" | "PENDING";
   status: "PENDING" | "APPROVED" | "REJECTED";
   imageUrls: string[];
   hasActiveAd: boolean;
@@ -101,13 +101,15 @@ const ReapprovalPopup: React.FC<ReapprovalPopupProps> = ({
             </p>
           </div>
         </div>
-        
+
         <div className="mb-6">
           <p className="text-sm text-slate-700">
-            Are you sure you want to send <strong>"{event.title}"</strong> for re-approval?
+            Are you sure you want to send <strong>"{event.title}"</strong> for
+            re-approval?
           </p>
           <p className="text-xs text-slate-500 mt-2">
-            The event will be reviewed by our team and you'll be notified once approved.
+            The event will be reviewed by our team and you'll be notified once
+            approved.
           </p>
         </div>
 
@@ -145,7 +147,7 @@ const EventCard: React.FC<EventCardProps> = ({
       day: "numeric",
     });
 
-    console.log(event.imageUrls[0])
+  console.log(event.imageUrls[0]);
 
   const formatTime = (dateString: string) =>
     new Date(dateString).toLocaleTimeString("en-US", {
@@ -188,7 +190,7 @@ const EventCard: React.FC<EventCardProps> = ({
 
   // Only show payment button if approved and payment due
   const showPaymentButton =
-    event.status === "APPROVED" && event.organizerFeeStatus === "DUE";
+    event.status === "APPROVED" && event.organizerFeeStatus === "PENDING";
 
   return (
     <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden hover:shadow-lg hover:border-slate-300 transition-all duration-200 group">
@@ -396,7 +398,6 @@ const EventCards: React.FC = () => {
   });
 
   useEffect(() => {
-    console.log(id);
     fetchEvents();
   }, [id]);
 
@@ -428,7 +429,7 @@ const EventCards: React.FC = () => {
         `/organizer/events/${eventToDelete.id}`
       );
       if (response.status === 204) {
-            fetchEvents();
+        fetchEvents();
         setShowDelete(false);
         setEventToDelete(null);
         setToast({
@@ -442,20 +443,22 @@ const EventCards: React.FC = () => {
       setToast({
         isOpen: true,
         type: "error",
-        message: error?.response?.data?.message || "Failed to delete event. Please try again.",
+        message:
+          error?.response?.data?.message ||
+          "Failed to delete event. Please try again.",
       });
     }
   };
 
   const handleReapprove = async () => {
     if (!eventToReapprove) return;
-    
+
     try {
       // Replace this with your actual API endpoint
       const response = await axiosInstance.put(
         `/organizer/events/${eventToReapprove.id}/resubmit`
-       );
-      
+      );
+
       if (response.status === 200) {
         setShowReapprove(false);
         setEventToReapprove(null);
@@ -470,7 +473,9 @@ const EventCards: React.FC = () => {
       setToast({
         isOpen: true,
         type: "error",
-        message: error?.response?.data?.message || "Failed to send event for re-approval. Please try again.",
+        message:
+          error?.response?.data?.message ||
+          "Failed to send event for re-approval. Please try again.",
       });
     } finally {
     }
@@ -485,7 +490,7 @@ const EventCards: React.FC = () => {
   };
 
   const handlePayment = async (eventData: Event) => {
-    navigate(`/payment/event/${eventData.id}`); // Fixed typo: "evnet" -> "event"
+    navigate(`payment/event/${eventData.id}`); // Fixed typo: "evnet" -> "event"
   };
 
   if (loading) {
@@ -555,7 +560,13 @@ const EventCards: React.FC = () => {
               </div>
               <div className="bg-white p-4 rounded-xl border border-slate-200">
                 <div className="text-2xl font-bold text-red-600">
-                  {events.filter((e) => e.organizerFeeStatus === "DUE").length}
+                  {
+                    events.filter(
+                      (e) =>
+                        e.organizerFeeStatus === "PENDING" &&
+                        e.status === "APPROVED"
+                    ).length
+                  }
                 </div>
                 <div className="text-sm text-slate-600">Payment Due</div>
               </div>

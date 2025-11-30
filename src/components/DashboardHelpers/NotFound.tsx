@@ -6,6 +6,8 @@ import {
 } from 'lucide-react';
 
 const NotFound: React.FC = () => {
+
+  // const role
   const handleGoHome = () => {
     window.location.href = '/';
   };
@@ -21,7 +23,7 @@ const NotFound: React.FC = () => {
     <div className="min-h-screen bg-slate-50">
 
       {/* Main Content */}
-      <div className="px-8 py-12 mt-14">
+      <div className="px-8 py-12 mt-14  z-20">
         <div className="max-w-2xl mx-auto text-center">
           {/* 404 Visual */}
           <div className="relative mb-8">
@@ -84,7 +86,7 @@ const NotFound: React.FC = () => {
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-20 left-10 w-32 h-32 bg-indigo-100 rounded-full opacity-20 animate-pulse"></div>
         <div className="absolute top-40 right-20 w-24 h-24 bg-emerald-100 rounded-full opacity-20 animate-pulse" style={{ animationDelay: '1s' }}></div>
-        <div className="absolute bottom-40 left-20 w-40 h-40 bg-blue-100 rounded-full opacity-20 animate-pulse" style={{ animationDelay: '2s' }}></div>
+
         <div className="absolute bottom-20 right-10 w-28 h-28 bg-amber-100 rounded-full opacity-20 animate-pulse" style={{ animationDelay: '3s' }}></div>
       </div>
     </div>

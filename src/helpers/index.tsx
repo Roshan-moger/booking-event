@@ -160,7 +160,6 @@ const ProtectedRoute: React.FC<any> = ({ children, allowedRoles }) => {
 const userData: UserData | null = userDataString ? JSON.parse(userDataString) : null;
   const userRole = userData?.roles[0]
 
-console.log(); 
    // or get from Redux
 
   if (!token) {

@@ -60,7 +60,7 @@ const selectedRoleRef = useRef<"ALL" | "CUSTOMER" | "ORGANIZER">("ALL");
   )
 
   useEffect(() => {
-    if (role.toLocaleLowerCase() !== "admin") {
+    if (role !== "ADMIN") {
       navigate("/notfound")
     }
   }, [role, navigate])
@@ -86,10 +86,9 @@ const selectedRoleRef = useRef<"ALL" | "CUSTOMER" | "ORGANIZER">("ALL");
   const pageSizeOptions = [10, 20, 50, 100]
 
   useEffect(() => {
-    if (role.toLocaleLowerCase() === "admin") {
       loadUsers()
-    }
-  }, [currentPage, selectedRoleRef.current, searchTerm, sortConfig, itemsPerPage, role])
+  
+  }, [currentPage, selectedRoleRef.current, searchTerm, sortConfig, itemsPerPage])
 
   const loadUsers = async () => {
     setLoading(true)
@@ -479,301 +478,235 @@ const selectedRoleRef = useRef<"ALL" | "CUSTOMER" | "ORGANIZER">("ALL");
         </div>
       </div>
 
-      {/* View Modal */}
-      {viewModal.isOpen && (
-        <>
-          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 md:left-64 md:top-18 left-0 sm:top-10 animate-[fadeIn_0.2s_ease-out]" 
-               onClick={closeViewModal} />
-          
-          <div className="fixed inset-0 flex items-center justify-center z-50 p-4 pointer-events-none">
-            <div className="bg-gradient-to-br from-white via-blue-50/30 to-indigo-50/40 rounded-3xl p-8 w-full max-w-md shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] pointer-events-auto transform animate-[slideUp_0.3s_ease-out] border border-white/60">
-              <div className="absolute -top-20 -right-20 w-40 h-40 bg-gradient-to-br from-indigo-400/30 to-purple-400/30 rounded-full blur-3xl" />
-              <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-gradient-to-br from-blue-400/30 to-cyan-400/30 rounded-full blur-3xl" />
-              
-              <div className="relative">
-                <div className="flex items-center justify-between mb-8">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/30 transform hover:scale-110 transition-transform duration-300">
-                      <User className="w-6 h-6 text-white" />
-                    </div>
-                    <div>
-                      <h2 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-                        User Details
-                      </h2>
-                      <p className="text-sm text-gray-500 mt-0.5">Complete user information</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={closeViewModal}
-                    className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-gray-100/80 transition-all duration-200 group hover:rotate-90"
-                  >
-                    <X className="w-5 h-5 text-gray-400 group-hover:text-gray-600 transition-colors" />
-                  </button>
-                </div>
-
-                {viewModal.loading ? (
-                  <div className="flex justify-center items-center py-16">
-                    <div className="relative">
-                      <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-200 border-t-indigo-600"></div>
-                      <div className="absolute inset-0 animate-ping rounded-full h-12 w-12 border-4 border-indigo-400 opacity-20"></div>
-                    </div>
-                    <span className="ml-4 text-gray-600 font-medium">Loading user details...</span>
-                  </div>
-                ) : viewModal.user ? (
-                  <div className="space-y-4">
-                    <div className="group flex items-center gap-4 p-5 bg-white/60 backdrop-blur-sm rounded-2xl hover:bg-white/80 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] border border-gray-100/50">
-                      <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-md shadow-indigo-500/20 group-hover:shadow-indigo-500/40 transition-shadow duration-300">
-                        <User className="w-5 h-5 text-white" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-1">Full Name</p>
-                        <p className="text-base font-bold text-gray-900 truncate">{viewModal.user.name}</p>
-                      </div>
-                    </div>
-
-                    <div className="group flex items-center gap-4 p-5 bg-white/60 backdrop-blur-sm rounded-2xl hover:bg-white/80 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] border border-gray-100/50">
-                      <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl flex items-center justify-center shadow-md shadow-emerald-500/20 group-hover:shadow-emerald-500/40 transition-shadow duration-300">
-                        <Mail className="w-5 h-5 text-white" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-1">Email Address</p>
-                        <p className="text-base font-bold text-gray-900 truncate">{viewModal.user.email}</p>
-                      </div>
-                    </div>
-
-                    <div className="group flex items-center gap-4 p-5 bg-white/60 backdrop-blur-sm rounded-2xl hover:bg-white/80 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] border border-gray-100/50">
-                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl flex items-center justify-center shadow-md shadow-blue-500/20 group-hover:shadow-blue-500/40 transition-shadow duration-300">
-                        <Phone className="w-5 h-5 text-white" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-1">Phone Number</p>
-                        <p className="text-base font-bold text-gray-900">{viewModal.user.phone}</p>
-                      </div>
-                    </div>
-                  </div>
-                ) : null}
-
-                {!viewModal.loading && (
-                  <div className="flex justify-end mt-8">
-                    <button
-                      onClick={closeViewModal}
-                      className="px-8 py-3 bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 rounded-xl text-gray-700 font-semibold transition-all duration-300 shadow-md hover:shadow-lg hover:scale-105 active:scale-95"
-                    >
-                      Close
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
+{/* View Modal */}
+{viewModal.isOpen && (
+  <>
+    <div
+      className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
+      onClick={closeViewModal}
+    />
+    <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 animate-[fadeIn_0.2s_ease-out]">
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex items-center gap-2">
+            <User className="w-5 h-5 text-blue-600" />
+            <h2 className="text-lg font-semibold text-gray-800">User Details</h2>
           </div>
-        </>
-      )}
+          <button
+            onClick={closeViewModal}
+            className="text-gray-500 hover:text-gray-700"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
 
-      {/* Edit Modal */}
-      {editModal.isOpen && (
-        <>
-          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 md:left-64 md:top-18 left-0 sm:top-10 animate-[fadeIn_0.2s_ease-out]" 
-               onClick={closeEditModal} />
-          
-          <div className="fixed inset-0 flex items-center justify-center z-50 p-4 pointer-events-none">
-            <div className="bg-gradient-to-br from-white via-amber-50/30 to-orange-50/40 rounded-3xl p-8 w-full max-w-md shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] pointer-events-auto transform animate-[slideUp_0.3s_ease-out] border border-white/60">
-              <div className="absolute -top-20 -right-20 w-40 h-40 bg-gradient-to-br from-amber-400/30 to-orange-400/30 rounded-full blur-3xl" />
-              <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-gradient-to-br from-yellow-400/30 to-amber-400/30 rounded-full blur-3xl" />
-              
-              <div className="relative">
-                <div className="flex items-center justify-between mb-8">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-500/30 transform hover:scale-110 transition-transform duration-300">
-                      <Pencil className="w-6 h-6 text-white" />
-                    </div>
-                    <div>
-                      <h2 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-                        Edit User
-                      </h2>
-                      <p className="text-sm text-gray-500 mt-0.5">Update user information</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={closeEditModal}
-                    className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-gray-100/80 transition-all duration-200 group hover:rotate-90"
-                  >
-                    <X className="w-5 h-5 text-gray-400 group-hover:text-gray-600 transition-colors" />
-                  </button>
-                </div>
-
-                {editModal.loading ? (
-                  <div className="flex justify-center items-center py-16">
-                    <div className="relative">
-                      <div className="animate-spin rounded-full h-12 w-12 border-4 border-amber-200 border-t-amber-600"></div>
-                      <div className="absolute inset-0 animate-ping rounded-full h-12 w-12 border-4 border-amber-400 opacity-20"></div>
-                    </div>
-                    <span className="ml-4 text-gray-600 font-medium">Loading...</span>
-                  </div>
-                ) : editModal.user ? (
-                  <div className="space-y-4">
-                    <div className="group">
-                      <label className="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-2 block">
-                        Full Name
-                      </label>
-                      <div className="flex items-center gap-3 p-4 bg-white/60 backdrop-blur-sm rounded-xl border border-gray-100/50 focus-within:bg-white/80 focus-within:border-amber-300 focus-within:shadow-lg transition-all duration-300">
-                        <User className="w-5 h-5 text-amber-500" />
-                        <input
-                          type="text"
-                          value={editModal.user.name}
-                          onChange={(e) =>
-                            setEditModal((prev) => ({
-                              ...prev,
-                              user: prev.user
-                                ? { ...prev.user, name: e.target.value }
-                                : null,
-                            }))
-                          }
-                          className="flex-1 bg-transparent outline-none text-gray-900 font-medium placeholder-gray-400"
-                          placeholder="Enter full name"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="group">
-                      <label className="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-2 block">
-                        Email Address
-                      </label>
-                      <div className="flex items-center gap-3 p-4 bg-white/60 backdrop-blur-sm rounded-xl border border-gray-100/50 focus-within:bg-white/80 focus-within:border-amber-300 focus-within:shadow-lg transition-all duration-300">
-                        <Mail className="w-5 h-5 text-emerald-500" />
-                        <input
-                          type="email"
-                          value={editModal.user.email}
-                          onChange={(e) =>
-                            setEditModal((prev) => ({
-                              ...prev,
-                              user: prev.user
-                                ? { ...prev.user, email: e.target.value }
-                                : null,
-                            }))
-                          }
-                          className="flex-1 bg-transparent outline-none text-gray-900 font-medium placeholder-gray-400"
-                          placeholder="Enter email"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="group">
-                      <label className="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-2 block">
-                        Phone Number
-                      </label>
-                      <div className="flex items-center gap-3 p-4 bg-white/60 backdrop-blur-sm rounded-xl border border-gray-100/50 focus-within:bg-white/80 focus-within:border-amber-300 focus-within:shadow-lg transition-all duration-300">
-                        <Phone className="w-5 h-5 text-blue-500" />
-                        <input
-                          type="text"
-                          value={editModal.user.phone}
-                          onChange={(e) =>
-                            setEditModal((prev) => ({
-                              ...prev,
-                              user: prev.user
-                                ? { ...prev.user, phone: e.target.value }
-                                : null,
-                            }))
-                          }
-                          className="flex-1 bg-transparent outline-none text-gray-900 font-medium placeholder-gray-400"
-                          placeholder="Enter phone number"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ) : null}
-
-                {!editModal.loading && (
-                  <div className="flex justify-end gap-3 mt-8">
-                    <button
-                      onClick={closeEditModal}
-                      className="px-6 py-3 bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 rounded-xl text-gray-700 font-semibold transition-all duration-300 shadow-md hover:shadow-lg hover:scale-105 active:scale-95"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleEditSave}
-                      className="px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 rounded-xl text-white font-semibold transition-all duration-300 shadow-md hover:shadow-lg hover:scale-105 active:scale-95 flex items-center gap-2"
-                    >
-                      <Save className="w-5 h-5" />
-                      Save Changes
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
+        {viewModal.loading ? (
+          <div className="flex justify-center items-center py-10">
+            <div className="animate-spin rounded-full h-10 w-10 border-4 border-gray-200 border-t-blue-500"></div>
           </div>
-        </>
-      )}
-
-      {/* Delete Modal */}
-      {showDelete && userToDelete && (
-        <>
-          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 md:left-64 md:top-18 left-0 sm:top-10 animate-[fadeIn_0.2s_ease-out]" 
-               onClick={closeDeleteModal} />
-          
-          <div className="fixed inset-0 flex items-center justify-center z-50 p-4 pointer-events-none">
-            <div className="bg-gradient-to-br from-white via-red-50/30 to-rose-50/40 rounded-3xl p-8 w-full max-w-md shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] pointer-events-auto transform animate-[slideUp_0.3s_ease-out] border border-white/60">
-              <div className="absolute -top-20 -right-20 w-40 h-40 bg-gradient-to-br from-red-400/30 to-rose-400/30 rounded-full blur-3xl" />
-              <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-gradient-to-br from-pink-400/30 to-red-400/30 rounded-full blur-3xl" />
-              
-              <div className="relative">
-                <div className="flex items-center justify-between mb-8">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-rose-600 rounded-2xl flex items-center justify-center shadow-lg shadow-red-500/30 transform hover:scale-110 transition-transform duration-300">
-                      <AlertTriangle className="w-6 h-6 text-white" />
-                    </div>
-                    <div>
-                      <h2 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-                        Delete User
-                      </h2>
-                      <p className="text-sm text-gray-500 mt-0.5">This action cannot be undone</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={closeDeleteModal}
-                    className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-gray-100/80 transition-all duration-200 group hover:rotate-90"
-                  >
-                    <X className="w-5 h-5 text-gray-400 group-hover:text-gray-600 transition-colors" />
-                  </button>
+        ) : (
+          viewModal.user && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 border rounded-lg p-3 bg-gray-50">
+                <User className="w-5 h-5 text-blue-500" />
+                <div>
+                  <p className="text-xs text-gray-500">Full Name</p>
+                  <p className="font-medium text-gray-800">{viewModal.user.name}</p>
                 </div>
-
-                <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-100/50 mb-6">
-                  <p className="text-gray-700 mb-4">
-                    Are you sure you want to delete this user? This action is permanent and cannot be reversed.
-                  </p>
-                  
-                  <div className="bg-red-50/80 rounded-xl p-4 border border-red-200/50">
-                    <div className="flex items-start gap-3">
-                      <User className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-red-900 mb-1">User Information</p>
-                        <p className="text-sm text-red-800 font-medium truncate">{userToDelete.name}</p>
-                        <p className="text-xs text-red-600 truncate">{userToDelete.email}</p>
-                      </div>
-                    </div>
-                  </div>
+              </div>
+              <div className="flex items-center gap-3 border rounded-lg p-3 bg-gray-50">
+                <Mail className="w-5 h-5 text-indigo-500" />
+                <div>
+                  <p className="text-xs text-gray-500">Email</p>
+                  <p className="font-medium text-gray-800">{viewModal.user.email}</p>
                 </div>
-
-                <div className="flex justify-end gap-3">
-                  <button
-                    onClick={closeDeleteModal}
-                    className="px-6 py-3 bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 rounded-xl text-gray-700 font-semibold transition-all duration-300 shadow-md hover:shadow-lg hover:scale-105 active:scale-95"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleDelete}
-                    className="px-6 py-3 bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 rounded-xl text-white font-semibold transition-all duration-300 shadow-md hover:shadow-lg hover:scale-105 active:scale-95 flex items-center gap-2"
-                  >
-                    <Trash2 className="w-5 h-5" />
-                    Delete User
-                  </button>
+              </div>
+              <div className="flex items-center gap-3 border rounded-lg p-3 bg-gray-50">
+                <Phone className="w-5 h-5 text-emerald-500" />
+                <div>
+                  <p className="text-xs text-gray-500">Phone</p>
+                  <p className="font-medium text-gray-800">{viewModal.user.phone}</p>
                 </div>
               </div>
             </div>
+          )
+        )}
+
+        <div className="mt-6 flex justify-end">
+          <button
+            onClick={closeViewModal}
+            className="px-4 py-2 text-sm font-medium bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-700"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </>
+)}
+
+{/* Edit Modal */}
+{editModal.isOpen && (
+  <>
+    <div
+      className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
+      onClick={closeEditModal}
+    />
+    <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 animate-[fadeIn_0.2s_ease-out]">
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex items-center gap-2">
+            <Pencil className="w-5 h-5 text-amber-600" />
+            <h2 className="text-lg font-semibold text-gray-800">Edit User</h2>
           </div>
-        </>
-      )}
+          <button
+            onClick={closeEditModal}
+            className="text-gray-500 hover:text-gray-700"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {editModal.loading ? (
+          <div className="flex justify-center items-center py-10">
+            <div className="animate-spin rounded-full h-10 w-10 border-4 border-gray-200 border-t-amber-500"></div>
+          </div>
+        ) : (
+          editModal.user && (
+            <div className="space-y-4">
+              <div>
+                <label className="flex items-center gap-2 text-sm text-gray-600 mb-1">
+                  <User className="w-4 h-4 text-blue-500" />
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  value={editModal.user.name}
+                  onChange={(e) =>
+                    setEditModal((prev) => ({
+                      ...prev,
+                      user: prev.user ? { ...prev.user, name: e.target.value } : null,
+                    }))
+                  }
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-400 outline-none"
+                  placeholder="Enter full name"
+                />
+              </div>
+              <div>
+                <label className="flex items-center gap-2 text-sm text-gray-600 mb-1">
+                  <Mail className="w-4 h-4 text-indigo-500" />
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={editModal.user.email}
+                  onChange={(e) =>
+                    setEditModal((prev) => ({
+                      ...prev,
+                      user: prev.user ? { ...prev.user, email: e.target.value } : null,
+                    }))
+                  }
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-400 outline-none"
+                  placeholder="Enter email"
+                />
+              </div>
+              <div>
+                <label className="flex items-center gap-2 text-sm text-gray-600 mb-1">
+                  <Phone className="w-4 h-4 text-emerald-500" />
+                  Phone
+                </label>
+                <input
+                  type="text"
+                  value={editModal.user.phone}
+                  onChange={(e) =>
+                    setEditModal((prev) => ({
+                      ...prev,
+                      user: prev.user ? { ...prev.user, phone: e.target.value } : null,
+                    }))
+                  }
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-400 outline-none"
+                  placeholder="Enter phone number"
+                />
+              </div>
+            </div>
+          )
+        )}
+
+        <div className="mt-6 flex justify-end gap-3">
+          <button
+            onClick={closeEditModal}
+            className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-700 text-sm font-medium"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleEditSave}
+            className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-medium flex items-center gap-2"
+          >
+            <Save className="w-4 h-4" />
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
+  </>
+)}
+
+{/* Delete Modal */}
+{showDelete && userToDelete && (
+  <>
+    <div
+      className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
+      onClick={closeDeleteModal}
+    />
+    <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 animate-[fadeIn_0.2s_ease-out]">
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-red-600" />
+            <h2 className="text-lg font-semibold text-gray-800">Delete User</h2>
+          </div>
+          <button
+            onClick={closeDeleteModal}
+            className="text-gray-500 hover:text-gray-700"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <p className="text-gray-700 mb-4">
+          Are you sure you want to delete this user? This action cannot be undone.
+        </p>
+
+        <div className="p-3 bg-red-50 border border-red-100 rounded-lg mb-6 flex items-center gap-3">
+          <User className="w-5 h-5 text-red-500" />
+          <div>
+            <p className="font-medium text-red-700">{userToDelete.name}</p>
+            <p className="text-sm text-red-600">{userToDelete.email}</p>
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-3">
+          <button
+            onClick={closeDeleteModal}
+            className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-700 text-sm font-medium"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleDelete}
+            className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium flex items-center gap-2"
+          >
+            <Trash2 className="w-4 h-4" />
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  </>
+)}
+
+
     </div>
   )
 }
