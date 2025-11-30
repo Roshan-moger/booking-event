@@ -1,28 +1,25 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
-import App from "./App.tsx";
-import { Toaster } from "react-hot-toast";
-createRoot(document.getElementById("root")!).render(
+import App from "./App";
+import { Provider } from "react-redux";
+import { PersistGate } from "redux-persist/integration/react";
+import { persistor, store } from "./redux/store";
+
+// ✅ Add this line
+import { registerSW } from "virtual:pwa-register";
+
+const rootElement = document.getElementById("root") as HTMLElement;
+
+// ✅ Register service worker (PWA)
+registerSW({ immediate: true });
+
+createRoot(rootElement).render(
   <StrictMode>
-    <App />
-    <Toaster
-      position="top-center"
-      reverseOrder={false}
-      toastOptions={{
-        style: {
-          background: "#333",
-          width: "250px",
-          color: "#fff",
-          fontSize: "18px",
-          borderRadius: "8px",
-        },
-        iconTheme: {
-          primary: "#713200",
-          secondary: "#FFFAEE",
-        },
-        duration: 4000,
-      }}
-    />
+    <Provider store={store}>
+      <PersistGate loading={null} persistor={persistor}>
+        <App />
+      </PersistGate>
+    </Provider>
   </StrictMode>
 );

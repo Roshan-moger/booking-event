@@ -1,10 +1,19 @@
-import Home from "./pages/Home";
+import { BrowserRouter } from "react-router-dom";
+import Router from "./Router";
+import { Toaster } from "react-hot-toast";
+
 
 function App() {
   return (
     <>
      
-        <Home />
+ <BrowserRouter>
+
+      <div className="App">
+        <Router />
+       <Toaster/>
+      </div>
+    </BrowserRouter>
     </>
   );
 }
